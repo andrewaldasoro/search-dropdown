@@ -1,7 +1,7 @@
-@use 'sass:math';
-@use '@angular/cdk';
-@use '@material/menu-surface' as mdc-menu-surface;
-@use '@material/list/evolution-mixins' as mdc-list;
+@use "sass:math";
+@use "@angular/cdk";
+@use "@material/menu-surface" as mdc-menu-surface;
+@use "@material/list/evolution-mixins" as mdc-list;
 
 // stylelint-disable material/no-prefixes
 @mixin user-select($value) {
@@ -52,8 +52,8 @@
 
 // Media queries
 // TODO(josephperrott): Change $mat-xsmall and $mat-small usages to rely on BreakpointObserver,
-$xsmall: 'max-width: 599px';
-$small: 'max-width: 959px';
+$xsmall: "max-width: 599px";
+$small: "max-width: 959px";
 
 // TODO: Revisit all z-indices before beta
 // z-index main list
@@ -89,13 +89,12 @@ $swift-ease-in: all $swift-ease-in-duration $swift-ease-in-timing-function !defa
 
 $swift-ease-in-out-duration: 500ms !default;
 $swift-ease-in-out-timing-function: $ease-in-out-curve-function !default;
-$swift-ease-in-out: all $swift-ease-in-out-duration $swift-ease-in-out-timing-function !default;
+$swift-ease-in-out: all $swift-ease-in-out-duration
+  $swift-ease-in-out-timing-function !default;
 
 $swift-linear-duration: 80ms !default;
 $swift-linear-timing-function: linear !default;
 $swift-linear: all $swift-linear-duration $swift-linear-timing-function !default;
-
-
 
 $mat-select-arrow-size: 5px !default;
 $mat-select-arrow-margin: 4px !default;
@@ -213,8 +212,7 @@ $scale: 0.75 !default;
   // Delay the transition until the label has animated about a third of the way through, in
   // order to prevent the placeholder from overlapping for a split second.
   transition: color $swift-ease-out-duration
-      math.div($swift-ease-out-duration, 3)
-      $swift-ease-out-timing-function;
+    math.div($swift-ease-out-duration, 3) $swift-ease-out-timing-function;
 
   ._mat-animation-noopable & {
     transition: none;
@@ -251,7 +249,9 @@ $scale: 0.75 !default;
   }
   &.mat-form-field-appearance-outline {
     .mdc-notched-outline__notch {
-      max-width: calc(100% - #{2 * ($mat-select-placeholder-arrow-space + $leading-width)});
+      max-width: calc(
+        100% - #{2 * ($mat-select-placeholder-arrow-space + $leading-width)}
+      );
     }
 
     .mdc-text-field--label-floating .mdc-notched-outline__notch {
@@ -264,7 +264,7 @@ $scale: 0.75 !default;
 // become empty. This is preferrable to inserting a blank space, because the
 // space can be read out by screen readers (see #21725).
 .mat-mdc-select-min-line:empty::before {
-  content: ' ';
+  content: " ";
   white-space: pre;
   width: 1px;
   display: inline-block;

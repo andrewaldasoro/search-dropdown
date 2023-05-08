@@ -11,9 +11,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
-    SEARCH_DROPDOWN_SELECT_SCROLL_STRATEGY_PROVIDER,
-    SearchDropdownSelect,
-    SearchDropdownSelectTrigger,
+  SEARCH_DROPDOWN_SELECT_SCROLL_STRATEGY_PROVIDER,
+  SearchDropdownSelect,
+  SearchDropdownSelectTrigger,
 } from './search-dropdown-select';
 
 @NgModule({
