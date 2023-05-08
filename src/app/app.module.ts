@@ -4,17 +4,11 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MaterialModule } from '../material.module';
 
-import { SearchDropdownSelectComponent } from './app-search-dropdown-select.component';
 import { AppComponent } from './app.component';
-import { SearchDropdownSelectModule } from './search-dropdown-select-2/module';
-import { SearchDropdownSelectComponent as ClonedSearchDropdownSelectComponent } from './search-dropdown-select/search-dropdown-select.component';
+import { SearchDropdownSelectModule } from './search-dropdown-select/module';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    SearchDropdownSelectComponent,
-    ClonedSearchDropdownSelectComponent,
-  ],
+  declarations: [AppComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
@@ -23,7 +17,6 @@ import { SearchDropdownSelectComponent as ClonedSearchDropdownSelectComponent } 
     MaterialModule,
     SearchDropdownSelectModule,
   ],
-  providers: [],
   bootstrap: [AppComponent],
 })
 export class AppModule {}
