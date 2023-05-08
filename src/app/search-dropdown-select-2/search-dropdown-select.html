@@ -1,0 +1,134 @@
+<div
+  class="mat-mdc-select-trigger"
+  [attr.aria-owns]="panelOpen ? id + '-panel' : null"
+  (click)="toggle()"
+  #fallbackOverlayOrigin="cdkOverlayOrigin"
+  cdkOverlayOrigin
+  #trigger
+>
+  <div class="mat-mdc-select-value" [ngSwitch]="empty" [attr.id]="_valueId">
+    <span
+      class="mat-mdc-select-placeholder mat-mdc-select-min-line"
+      *ngSwitchCase="true"
+      >{{placeholder}}</span
+    >
+    <span
+      class="mat-mdc-select-value-text"
+      *ngSwitchCase="false"
+      [matTooltip]="triggerValue"
+      [matTooltipDisabled]="!multiple || $any(selected).length < 3"
+    >
+      <!-- <span class="mat-mdc-select-min-line">{{triggerValue}}</span> -->
+      <ng-container *ngIf="multiple">
+        <mat-chip-row
+          *ngFor="let option of $any(selected)"
+          (removed)="remove(option)"
+        >
+          {{ option.viewValue }}
+          <button
+            matChipRemove
+            [attr.aria-label]="'Remove ' + option.viewValue"
+          >
+            <svg
+              viewBox="0 96 960 960"
+              width="24px"
+              height="24px"
+              focusable="false"
+            >
+              <path
+                d="m249 849-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z"
+              />
+            </svg>
+          </button>
+        </mat-chip-row>
+      </ng-container>
+      <ng-container *ngIf="!multiple">{{ triggerValue }}</ng-container>
+    </span>
+  </div>
+
+  <div class="mat-mdc-select-arrow-wrapper">
+    <div class="mat-mdc-select-arrow">
+      <!-- Use an inline SVG, because it works better than a CSS triangle in high contrast mode. -->
+      <svg viewBox="0 0 24 24" width="24px" height="24px" focusable="false">
+        <path d="M7 10l5 5 5-5z" />
+      </svg>
+    </div>
+  </div>
+</div>
+
+<ng-template
+  cdkConnectedOverlay
+  cdkConnectedOverlayLockPosition
+  cdkConnectedOverlayHasBackdrop
+  cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+  [cdkConnectedOverlayPanelClass]="_overlayPanelClass"
+  [cdkConnectedOverlayScrollStrategy]="_scrollStrategy"
+  [cdkConnectedOverlayOrigin]="_preferredOverlayOrigin || fallbackOverlayOrigin"
+  [cdkConnectedOverlayOpen]="panelOpen"
+  [cdkConnectedOverlayPositions]="_positions"
+  [cdkConnectedOverlayWidth]="_overlayWidth"
+  (backdropClick)="close()"
+  (attach)="_onAttached()"
+  (detach)="close()"
+>
+  <div
+    #panel
+    role="listbox"
+    tabindex="-1"
+    class="mat-mdc-select-panel mdc-menu-surface mdc-menu-surface--open {{ _getPanelTheme() }}"
+    [attr.id]="id + '-panel'"
+    [attr.aria-multiselectable]="multiple"
+    [attr.aria-label]="ariaLabel || null"
+    [attr.aria-labelledby]="_getPanelAriaLabelledby()"
+    [ngClass]="panelClass"
+    [@transformPanel]="'showing'"
+    (@transformPanel.done)="_panelDoneAnimatingStream.next($event.toState)"
+    (keydown)="_handleKeydown($event)"
+  >
+    <input [(ngModel)]="searchValue" (keyup)="searchValueChange()" />
+    <div class="w-full my-2">
+      <mat-divider></mat-divider>
+    </div>
+    <ng-container *ngIf="hasSelectAll">
+      <mat-checkbox
+        (change)="onSelectAll($event)"
+        [checked]="getAllSelected()"
+        [indeterminate]="!getAllSelected() && getSomeSelected()"
+        color="primary"
+      >
+        Select all
+      </mat-checkbox>
+      <div class="w-full my-2">
+        <mat-divider></mat-divider>
+      </div>
+    </ng-container>
+    <mat-option *ngIf="!isLoading && noData" [disabled]="true">
+      <div>No options</div>
+    </mat-option>
+    <span *ngIf="hasLocalAndAsyncOptions">Local</span>
+    <mat-option
+      *ngFor="let option of localDropdownOptions"
+      [value]="option.value"
+      >{{ option.label }}</mat-option
+    >
+    <span *ngIf="hasLocalAndAsyncOptions">Async</span>
+    <mat-option
+      *ngFor="let option of asyncDropdownOptions"
+      [value]="option.value"
+      >{{ option.label }}</mat-option
+    >
+    <mat-option
+      *ngIf="isLoading && !asyncDropdownOptions.length"
+      [disabled]="true"
+    >
+      <mat-spinner
+        *ngIf="isLoading"
+        class="m-auto"
+        [diameter]="20"
+      ></mat-spinner>
+    </mat-option>
+    <mat-option *ngIf="!isLoading && failed" [disabled]="true">
+      <div>Failed loading</div>
+    </mat-option>
+  </div>
+</ng-template>
