@@ -1,0 +1,20 @@
+<!-- Set aria-hidden="true" to this DOM node and other decorative nodes in this file. This might
+ be contributing to issue where sometimes VoiceOver focuses on a TextNode in the a11y tree instead
+ of the Option node (#23202). Most assistive technology will generally ignore non-role,
+ non-text-content elements. Adding aria-hidden seems to make VoiceOver behave more consistently. -->
+<mat-pseudo-checkbox
+  class="mat-mdc-option-pseudo-checkbox"
+  [disabled]="disabled"
+  [state]="state ? state : selected ? 'checked' : 'unchecked'"
+  aria-hidden="true"
+></mat-pseudo-checkbox>
+
+<span class="mdc-list-item__primary-text">Select All</span>
+
+<div
+  class="mat-mdc-option-ripple mat-mdc-focus-indicator"
+  aria-hidden="true"
+  mat-ripple
+  [matRippleTrigger]="_getHostElement()"
+  [matRippleDisabled]="disabled || disableRipple"
+></div>

@@ -7,6 +7,7 @@ import {
 } from '@angular/material/core';
 import { MatOptgroup } from './optgroup';
 import { MatOption } from './option';
+import { MatSelectAllOption } from './select-all';
 
 @NgModule({
   imports: [
@@ -15,8 +16,8 @@ import { MatOption } from './option';
     MatCommonModule,
     MatPseudoCheckboxModule,
   ],
-  exports: [MatOption, MatOptgroup],
-  declarations: [MatOption, MatOptgroup],
+  exports: [MatOption, MatOptgroup, MatSelectAllOption],
+  declarations: [MatOption, MatOptgroup, MatSelectAllOption],
 })
 export class MatOptionModule {}
 

@@ -1,6 +1,7 @@
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Component, Input } from '@angular/core';
+import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { FormControl } from '@angular/forms';
+import { MatPseudoCheckboxState } from '@angular/material/core';
 
 interface Option {
   value: any;
@@ -12,9 +13,13 @@ interface Option {
   templateUrl: 'app.component.html',
 })
 export class AppComponent {
+  @ViewChild('selectCheckbox', { static: false, read: ElementRef })
+  selectCheckbox?: ElementRef<HTMLElement>;
+
   searchValue = '';
   _options: Option[] = [];
   _multiple = false;
+  _hideSelectAll = false;
 
   @Input()
   get options() {
@@ -34,8 +39,26 @@ export class AppComponent {
     this._multiple = coerceBooleanProperty(value);
   }
 
+  @Input()
+  get hideSelectAll() {
+    return this._hideSelectAll;
+  }
+  set hideSelectAll(value: boolean) {
+    this._hideSelectAll = coerceBooleanProperty(value);
+  }
+
   get selectedOptions() {
     return this._options.filter((option) => option.selected);
+  }
+
+  get optionSelectionState(): MatPseudoCheckboxState {
+    if (this._options.every((option) => option.selected)) {
+      return 'checked';
+    } else if (this._options.some((option) => option.selected)) {
+      return 'indeterminate';
+    } else {
+      return 'unchecked';
+    }
   }
 
   constructor() {
@@ -45,33 +68,23 @@ export class AppComponent {
       { value: 'blueberry', label: 'Blueberry', selected: false },
     ];
 
-    this.multiple = true;
+    // this.multiple = true;
   }
 
   remove(option: Option): void {
     option.selected = false;
   }
 
-  // onSelectAll(event: MatCheckboxChange) {
-  //   if (this.options)
-  //     this.options.forEach((option) => {
-  //       option.selected = true;
-  //     });
-  // }
+  _getHostSelectCheckboxElement(): HTMLElement | undefined {
+    return this.selectCheckbox?.nativeElement;
+  }
 
-  // getAllSelected() {
-  //   if (!this.value || !Array.isArray(this.value)) return false;
-
-  //   console.log(this._options.length, this.value.length);
-
-  //   return this._options.length === this.value.length;
-  // }
-
-  // getSomeSelected() {
-  //   if (!this.value || !Array.isArray(this.value)) return false;
-
-  //   return this.value.length > 0 && this._options.length !== this.value.length;
-  // }
+  onSelectAll(value: boolean) {
+    if (this._options)
+      this._options.forEach((option) => {
+        option.selected = value;
+      });
+  }
 
   // request = (searchValue?: string, from = 0, size = 10) => {
   //   const arr = [
