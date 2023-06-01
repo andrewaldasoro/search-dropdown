@@ -12,6 +12,9 @@ export interface Option {
 @Component({
   selector: 'mat-search-select',
   templateUrl: 'search-select.html',
+  host: {
+    class: 'mat-mdc-search-select',
+  },
 })
 export class MatSearchSelect {
   @ViewChild('selectCheckbox', { static: false, read: ElementRef })
@@ -40,6 +43,8 @@ export class MatSearchSelect {
     this._multiple = coerceBooleanProperty(value);
   }
 
+  @Input() control: FormControl = new FormControl();
+
   @Input()
   get hideSelectAll() {
     return this._hideSelectAll;
@@ -66,16 +71,6 @@ export class MatSearchSelect {
     }
   }
 
-  constructor() {
-    this.options = [
-      { value: 'apple', label: 'Apple', selected: false },
-      { value: 'mango', label: 'Mango', selected: false },
-      { value: 'blueberry', label: 'Blueberry', selected: false },
-    ];
-
-    // this.multiple = true;
-  }
-
   remove(option: Option): void {
     option.selected = false;
   }
@@ -90,6 +85,4 @@ export class MatSearchSelect {
         option.selected = value;
       });
   }
-
-  control = new FormControl();
 }

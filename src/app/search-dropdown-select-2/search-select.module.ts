@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatChipsModule } from '@angular/material/chips';
 import {
   MatCommonModule,
@@ -17,6 +17,7 @@ import { MatSelectModule } from './select.module';
   imports: [
     BrowserModule,
     FormsModule,
+    ReactiveFormsModule,
     MatDividerModule,
     MatChipsModule,
     MatFormFieldModule,

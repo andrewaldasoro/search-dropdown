@@ -48,11 +48,16 @@ export class _MatOptionBase<T = any>
   private _selected = false;
   private _active = false;
   private _disabled = false;
+  private _multiple = this._parent && this._parent.multiple;
   private _mostRecentViewValue = '';
 
   /** Whether the wrapping component is in multiple selection mode. */
-  get multiple() {
-    return this._parent && this._parent.multiple;
+  @Input()
+  get multiple(): boolean {
+    return !!this._multiple;
+  }
+  set multiple(value: boolean) {
+    this._multiple = coerceBooleanProperty(value);
   }
 
   /** Whether or not the option is currently selected. */

@@ -1,6 +1,6 @@
 <mat-form-field>
   <mat-label>Favorite food</mat-label>
-  <mat-select [multiple]="multiple">
+  <mat-select [multiple]="multiple" [formControl]="control">
     <mat-select-trigger *ngIf="multiple">
       <mat-chip-row
         *ngFor="let option of selectedOptions"
@@ -38,7 +38,7 @@
         <mat-divider></mat-divider>
       </div>
     </ng-container>
-    <mat-option *ngIf="noData" [disabled]="true">
+    <mat-option *ngIf="noData" [disabled]="true" [multiple]="false">
       <div>No options</div>
     </mat-option>
     <mat-option
