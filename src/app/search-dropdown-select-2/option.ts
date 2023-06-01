@@ -56,8 +56,16 @@ export class _MatOptionBase<T = any>
   }
 
   /** Whether or not the option is currently selected. */
+  @Input()
   get selected(): boolean {
     return this._selected;
+  }
+  set selected(value: boolean) {
+    if (coerceBooleanProperty(value)) {
+      this.select();
+    } else {
+      this.deselect();
+    }
   }
 
   /** The form value of the option. */
@@ -90,6 +98,8 @@ export class _MatOptionBase<T = any>
   @Output() readonly onSelectionChange = new EventEmitter<
     MatOptionSelectionChange<T>
   >();
+
+  @Output() readonly selectedChange = new EventEmitter<boolean>();
 
   /** Element containing the option's text. */
   @ViewChild('text', { static: true }) _text:
@@ -249,6 +259,8 @@ export class _MatOptionBase<T = any>
     this.onSelectionChange.emit(
       new MatOptionSelectionChange<T>(this, isUserInput)
     );
+
+    this.selectedChange.emit(this._selected);
   }
 }
 
