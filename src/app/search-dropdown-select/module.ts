@@ -5,11 +5,17 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatCommonModule, MatOptionModule } from '@angular/material/core';
+import {
+  MatCommonModule,
+  MatOptionModule,
+  MatPseudoCheckboxModule,
+  MatRippleModule,
+} from '@angular/material/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { OptionComponent } from './option';
 import {
   SEARCH_DROPDOWN_SELECT_SCROLL_STRATEGY_PROVIDER,
   SearchDropdownSelect,
@@ -28,16 +34,23 @@ import {
     MatTooltipModule,
     MatDividerModule,
     MatCommonModule,
+    MatPseudoCheckboxModule,
+    MatRippleModule,
   ],
   exports: [
     CdkScrollableModule,
     MatFormFieldModule,
     SearchDropdownSelect,
     SearchDropdownSelectTrigger,
+    OptionComponent,
     MatOptionModule,
     MatCommonModule,
   ],
-  declarations: [SearchDropdownSelect, SearchDropdownSelectTrigger],
+  declarations: [
+    SearchDropdownSelect,
+    SearchDropdownSelectTrigger,
+    OptionComponent,
+  ],
   providers: [SEARCH_DROPDOWN_SELECT_SCROLL_STRATEGY_PROVIDER],
 })
 export class SearchDropdownSelectModule {}

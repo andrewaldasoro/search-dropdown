@@ -1,8 +1,31 @@
-<mat-form-field>
+<!-- <mat-form-field>
   <mat-label>Component</mat-label>
   <search-dropdown-select
     [multiple]="multiple"
     [options]="options"
-    [formControl]="control"
   ></search-dropdown-select>
+</mat-form-field> -->
+<!-- [formControl]="control" -->
+
+<!-- <mat-form-field>
+  <mat-label>Component</mat-label>
+  <search-dropdown-select [options]="options"></search-dropdown-select>
+</mat-form-field> -->
+
+<mat-form-field>
+  <mat-label>Favorite food</mat-label>
+  <mat-select [multiple]="multiple">
+    <mat-option *ngFor="let option of options" [value]="option.value">
+      {{ option.label }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
+
+<mat-form-field>
+  <mat-label>Favorite food</mat-label>
+  <mat-select>
+    <mat-option *ngFor="let option of options" [value]="option.value">
+      {{ option.label }}
+    </mat-option>
+  </mat-select>
 </mat-form-field>

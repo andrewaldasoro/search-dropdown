@@ -27,11 +27,11 @@ import {
 import { ViewportRuler } from '@angular/cdk/scrolling';
 import {
   AfterContentInit,
-  AfterViewInit,
   Attribute,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ContentChild,
   ContentChildren,
   Directive,
   DoCheck,
@@ -60,7 +60,6 @@ import {
   NgForm,
   Validators,
 } from '@angular/forms';
-import { MatCheckboxChange } from '@angular/material/checkbox';
 import {
   CanDisable,
   CanDisableRipple,
@@ -77,37 +76,49 @@ import {
   MatFormField,
   MatFormFieldControl,
 } from '@angular/material/form-field';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, defer, merge } from 'rxjs';
 import {
   distinctUntilChanged,
   filter,
   map,
+  startWith,
+  switchMap,
   take,
   takeUntil,
 } from 'rxjs/operators';
-import { Option, OptionComponent } from './option';
-import { searchDropdownSelectAnimations } from './search-dropdown-select-animations';
 import {
-  getSearchDropdownSelectDynamicMultipleError,
-  getSearchDropdownSelectNoOptions,
-  getSearchDropdownSelectNonArrayValueError,
-  getSearchDropdownSelectNonFunctionValueError,
-} from './search-dropdown-select-errors';
+  MAT_OPTGROUP,
+  MAT_OPTION_PARENT_COMPONENT,
+  MatOptgroup,
+  MatOption,
+  MatOptionSelectionChange,
+  _MatOptionBase,
+  _countGroupLabelsBeforeOption,
+  _getOptionScrollPosition,
+} from './option.module';
+import { matSelectAnimations } from './select-animations';
+import {
+  getMatSelectDynamicMultipleError,
+  getMatSelectNonArrayValueError,
+  getMatSelectNonFunctionValueError,
+} from './select-errors';
 
 let nextUniqueId = 0;
 
 /** Injection token that determines the scroll handling while a select is open. */
-export const SEARCH_DROPDOWN_SELECT_SCROLL_STRATEGY = new InjectionToken<
+export const MAT_SELECT_SCROLL_STRATEGY = new InjectionToken<
   () => ScrollStrategy
->('search-dropdown-select-scroll-strategy');
-export function SEARCH_DROPDOWN_SELECT_SCROLL_STRATEGY_PROVIDER_FACTORY(
+>('mat-select-scroll-strategy');
+
+/** @docs-private */
+export function MAT_SELECT_SCROLL_STRATEGY_PROVIDER_FACTORY(
   overlay: Overlay
 ): () => ScrollStrategy {
   return () => overlay.scrollStrategies.reposition();
 }
 
 /** Object that can be used to configure the default options for the select module. */
-export interface SearchDropdownSelectConfig {
+export interface MatSelectConfig {
   /** Whether option centering should be disabled. */
   disableOptionCentering?: boolean;
 
@@ -119,41 +130,48 @@ export interface SearchDropdownSelectConfig {
 
   /** Wheter icon indicators should be hidden for single-selection. */
   hideSingleSelectionIndicator?: boolean;
+
+  /**
+   * Width of the panel. If set to `auto`, the panel will match the trigger width.
+   * If set to null or an empty string, the panel will grow to match the longest option's text.
+   */
+  panelWidth?: string | number | null;
 }
 
 /** Injection token that can be used to provide the default options the select module. */
-export const SEARCH_DROPDOWN_SELECT_CONFIG =
-  new InjectionToken<SearchDropdownSelectConfig>(
-    'SEARCH_DROPDOWN_SELECT_CONFIG'
-  );
-export const SEARCH_DROPDOWN_SELECT_SCROLL_STRATEGY_PROVIDER = {
-  provide: SEARCH_DROPDOWN_SELECT_SCROLL_STRATEGY,
+export const MAT_SELECT_CONFIG = new InjectionToken<MatSelectConfig>(
+  'MAT_SELECT_CONFIG'
+);
+
+/** @docs-private */
+export const MAT_SELECT_SCROLL_STRATEGY_PROVIDER = {
+  provide: MAT_SELECT_SCROLL_STRATEGY,
   deps: [Overlay],
-  useFactory: SEARCH_DROPDOWN_SELECT_SCROLL_STRATEGY_PROVIDER_FACTORY,
+  useFactory: MAT_SELECT_SCROLL_STRATEGY_PROVIDER_FACTORY,
 };
 
 /**
- * Injection token that can be used to reference instances of `SearchDropdownSelectTrigger`. It serves as
- * alternative token to the actual `SearchDropdownSelectTrigger` class which could cause unnecessary
+ * Injection token that can be used to reference instances of `MatSelectTrigger`. It serves as
+ * alternative token to the actual `MatSelectTrigger` class which could cause unnecessary
  * retention of the class and its directive metadata.
  */
-export const SEARCH_DROPDOWN_SELECT_TRIGGER =
-  new InjectionToken<SearchDropdownSelectTrigger>(
-    'SearchDropdownSelectTrigger'
-  );
+export const MAT_SELECT_TRIGGER = new InjectionToken<MatSelectTrigger>(
+  'MatSelectTrigger'
+);
 
 /** Change event object that is emitted when the select value has changed. */
-export class SearchDropdownSelectChange {
+export class MatSelectChange {
   constructor(
     /** Reference to the select that emitted the change event. */
-    public source: SearchDropdownSelect,
+    public source: MatSelect,
     /** Current value of the select that emitted the event. */
     public value: any
   ) {}
 }
 
-// Boilerplate for applying mixins to SearchDropdownSelect.
-const _SearchDropdownSelectMixinBase = mixinDisableRipple(
+// Boilerplate for applying mixins to MatSelect.
+/** @docs-private */
+const _MatSelectMixinBase = mixinDisableRipple(
   mixinTabIndex(
     mixinDisabled(
       mixinErrorState(
@@ -161,6 +179,7 @@ const _SearchDropdownSelectMixinBase = mixinDisableRipple(
           /**
            * Emits whenever the component state changes and should cause the parent
            * form-field to update. Implemented as part of `MatFormFieldControl`.
+           * @docs-private
            */
           readonly stateChanges = new Subject<void>();
 
@@ -172,6 +191,7 @@ const _SearchDropdownSelectMixinBase = mixinDisableRipple(
             /**
              * Form control bound to the component.
              * Implemented as part of `MatFormFieldControl`.
+             * @docs-private
              */
             public ngControl: NgControl
           ) {}
@@ -181,10 +201,10 @@ const _SearchDropdownSelectMixinBase = mixinDisableRipple(
   )
 );
 
-/** Base class with all of the `SearchDropdownSelect` functionality. */
+/** Base class with all of the `MatSelect` functionality. */
 @Directive()
-export abstract class _SearchDropdownSelectBase<C>
-  extends _SearchDropdownSelectMixinBase
+export abstract class _MatSelectBase<C>
+  extends _MatSelectMixinBase
   implements
     AfterContentInit,
     OnChanges,
@@ -199,7 +219,15 @@ export abstract class _SearchDropdownSelectBase<C>
     CanDisableRipple
 {
   /** All of the defined select options. */
-  abstract _options: Option[];
+  abstract options: QueryList<_MatOptionBase>;
+
+  // TODO(crisbeto): this is only necessary for the non-MDC select, but it's technically a
+  // public API so we have to keep it. It should be deprecated and removed eventually.
+  /** All of the defined groups of options. */
+  abstract optionGroups: QueryList<MatOptgroup>;
+
+  /** User-supplied override of the trigger element. */
+  abstract customTrigger: {};
 
   /**
    * This position config ensures that the top "start" corner of the overlay
@@ -228,7 +256,7 @@ export abstract class _SearchDropdownSelectBase<C>
   private _compareWith = (o1: any, o2: any) => o1 === o2;
 
   /** Unique id for this input. */
-  private _uid = `search-dropdown-select-${nextUniqueId++}`;
+  private _uid = `mat-select-${nextUniqueId++}`;
 
   /** Current `aria-labelledby` value for the select trigger. */
   private _triggerAriaLabelledBy: string | null = null;
@@ -244,14 +272,15 @@ export abstract class _SearchDropdownSelectBase<C>
 
   /**
    * Implemented as part of MatFormFieldControl.
+   * @docs-private
    */
   @Input('aria-describedby') userAriaDescribedBy!: string;
 
   /** Deals with the selection logic. */
-  _selectionModel!: SelectionModel<Option>;
+  _selectionModel!: SelectionModel<MatOption>;
 
   /** Manages keyboard events for options in the panel. */
-  _keyManager!: ActiveDescendantKeyManager<Option>;
+  _keyManager!: ActiveDescendantKeyManager<MatOption>;
 
   /** `View -> model callback called when value changes` */
   _onChange: (value: any) => void = () => {};
@@ -260,7 +289,7 @@ export abstract class _SearchDropdownSelectBase<C>
   _onTouched = () => {};
 
   /** ID for the DOM node containing the select's value. */
-  _valueId = `search-dropdown-select-value-${nextUniqueId++}`;
+  _valueId = `mat-select-value-${nextUniqueId++}`;
 
   /** Emits when the panel element is finished transforming in. */
   readonly _panelDoneAnimatingStream = new Subject<string>();
@@ -278,7 +307,7 @@ export abstract class _SearchDropdownSelectBase<C>
   private _focused = false;
 
   /** A name for this control that can be used by `mat-form-field`. */
-  controlType = 'search-dropdown-select';
+  controlType = 'mat-select';
 
   /** Trigger that opens the select. */
   @ViewChild('trigger') trigger!: ElementRef;
@@ -330,7 +359,7 @@ export abstract class _SearchDropdownSelectBase<C>
   }
   set multiple(value: BooleanInput) {
     if (this._selectionModel) {
-      throw getSearchDropdownSelectDynamicMultipleError();
+      throw getMatSelectDynamicMultipleError();
     }
 
     this._multiple = coerceBooleanProperty(value);
@@ -359,7 +388,7 @@ export abstract class _SearchDropdownSelectBase<C>
   }
   set compareWith(fn: (o1: any, o2: any) => boolean) {
     if (typeof fn !== 'function') {
-      throw getSearchDropdownSelectNonFunctionValueError();
+      throw getMatSelectNonFunctionValueError();
     }
     this._compareWith = fn;
     if (this._selectionModel) {
@@ -405,7 +434,11 @@ export abstract class _SearchDropdownSelectBase<C>
    * Function used to sort the values in a select in multiple mode.
    * Follows the same logic as `Array.prototype.sort`.
    */
-  @Input() sortComparator!: (a: Option, b: Option, options: Option[]) => number;
+  @Input() sortComparator?: (
+    a: MatOption,
+    b: MatOption,
+    options: MatOption[]
+  ) => number;
 
   /** Unique id of the element. */
   @Input()
@@ -419,25 +452,25 @@ export abstract class _SearchDropdownSelectBase<C>
   private _id!: string;
 
   /** Combined stream of all of the child options' change events. */
-  // readonly optionSelectionChanges: Observable<MatOptionSelectionChange> = defer(
-  //   () => {
-  //     const options = this.options;
+  readonly optionSelectionChanges: Observable<MatOptionSelectionChange> = defer(
+    () => {
+      const options = this.options;
 
-  //     if (options) {
-  //       return options.changes.pipe(
-  //         startWith(options),
-  //         switchMap(() =>
-  //           merge(...options.map((option) => option.onSelectionChange))
-  //         )
-  //       );
-  //     }
+      if (options) {
+        return options.changes.pipe(
+          startWith(options),
+          switchMap(() =>
+            merge(...options.map((option) => option.onSelectionChange))
+          )
+        );
+      }
 
-  //     return this._ngZone.onStable.pipe(
-  //       take(1),
-  //       switchMap(() => this.optionSelectionChanges)
-  //     );
-  //   }
-  // ) as Observable<MatOptionSelectionChange>;
+      return this._ngZone.onStable.pipe(
+        take(1),
+        switchMap(() => this.optionSelectionChanges)
+      );
+    }
+  ) as Observable<MatOptionSelectionChange>;
 
   /** Event emitted when the select panel has been toggled. */
   @Output() readonly openedChange: EventEmitter<boolean> =
@@ -463,6 +496,7 @@ export abstract class _SearchDropdownSelectBase<C>
   /**
    * Event that emits whenever the raw value of the select changes. This is here primarily
    * to facilitate the two-way binding for the `value` input.
+   * @docs-private
    */
   @Output() readonly valueChange: EventEmitter<any> = new EventEmitter<any>();
 
@@ -480,11 +514,11 @@ export abstract class _SearchDropdownSelectBase<C>
     protected _parentFormField: MatFormField,
     @Self() @Optional() ngControl: NgControl,
     @Attribute('tabindex') tabIndex: string,
-    @Inject(SEARCH_DROPDOWN_SELECT_SCROLL_STRATEGY) scrollStrategyFactory: any,
+    @Inject(MAT_SELECT_SCROLL_STRATEGY) scrollStrategyFactory: any,
     private _liveAnnouncer: LiveAnnouncer,
     @Optional()
-    @Inject(SEARCH_DROPDOWN_SELECT_CONFIG)
-    protected _defaultOptions?: SearchDropdownSelectConfig
+    @Inject(MAT_SELECT_CONFIG)
+    protected _defaultOptions?: MatSelectConfig
   ) {
     super(
       elementRef,
@@ -516,7 +550,7 @@ export abstract class _SearchDropdownSelectBase<C>
   }
 
   ngOnInit() {
-    this._selectionModel = new SelectionModel<Option>(this.multiple);
+    this._selectionModel = new SelectionModel<MatOption>(this.multiple);
     this.stateChanges.next();
 
     // We need `distinctUntilChanged` here, because some browsers will
@@ -537,12 +571,12 @@ export abstract class _SearchDropdownSelectBase<C>
         event.removed.forEach((option) => option.deselect());
       });
 
-    // this.options.changes
-    //   .pipe(startWith(null), takeUntil(this._destroy))
-    //   .subscribe(() => {
-    //     this._resetOptions();
-    //     this._initializeSelection();
-    //   });
+    this.options.changes
+      .pipe(startWith(null), takeUntil(this._destroy))
+      .subscribe(() => {
+        this._resetOptions();
+        this._initializeSelection();
+      });
   }
 
   ngDoCheck() {
@@ -668,33 +702,13 @@ export abstract class _SearchDropdownSelectBase<C>
     this.stateChanges.next();
   }
 
-  toggleAll(check?: boolean): void {
-    if (check === true) this._selectionModel.select(...this._options);
-    if (check === false) this._selectionModel.deselect(...this._options);
-    if (check === undefined)
-      this._options.forEach((option) => {
-        if (option.selected) this._selectionModel.deselect(option);
-        else this._selectionModel.select(option);
-      });
-  }
-
-  remove(option: Option): void {
-    this._selectionModel.deselect(option);
-
-    // this._sortValues();
-
-    this._propagateChanges();
-
-    this.stateChanges.next();
-  }
-
   /** Whether or not the overlay panel is open. */
   get panelOpen(): boolean {
     return this._panelOpen;
   }
 
   /** The currently selected option. */
-  get selected(): Option | Option[] {
+  get selected(): MatOption | MatOption[] {
     return this.multiple
       ? this._selectionModel?.selected || []
       : this._selectionModel?.selected[0];
@@ -708,17 +722,18 @@ export abstract class _SearchDropdownSelectBase<C>
 
     if (this._multiple) {
       const selectedOptions = this._selectionModel.selected.map(
-        (option) => option.label
+        (option) => option.viewValue
       );
 
       if (this._isRtl()) {
         selectedOptions.reverse();
       }
 
+      // TODO(crisbeto): delimiter should be configurable for proper localization.
       return selectedOptions.join(', ');
     }
 
-    return this._selectionModel.selected[0].label;
+    return this._selectionModel.selected[0].viewValue;
   }
 
   /** Whether the element is in RTL mode. */
@@ -762,7 +777,10 @@ export abstract class _SearchDropdownSelectBase<C>
       if (selectedOption && previouslySelectedOption !== selectedOption) {
         // We set a duration on the live announcement, because we want the live element to be
         // cleared after a while so that users can't navigate to it using the arrow keys.
-        this._liveAnnouncer.announce((selectedOption as Option).label, 10000);
+        this._liveAnnouncer.announce(
+          (selectedOption as MatOption).viewValue,
+          10000
+        );
       }
     }
   }
@@ -790,11 +808,11 @@ export abstract class _SearchDropdownSelectBase<C>
       manager.activeItem._selectViaInteraction();
     } else if (!isTyping && this._multiple && keyCode === A && event.ctrlKey) {
       event.preventDefault();
-      const hasDeselectedOptions = this._options.some(
-        (option) => !option.disabled && !option.selected
+      const hasDeselectedOptions = this.options.some(
+        (opt) => !opt.disabled && !opt.selected
       );
 
-      this._options.forEach((option) => {
+      this.options.forEach((option) => {
         if (!option.disabled) {
           hasDeselectedOptions ? option.select() : option.deselect();
         }
@@ -876,17 +894,18 @@ export abstract class _SearchDropdownSelectBase<C>
    * found with the designated value, the select trigger is cleared.
    */
   private _setSelectionByValue(value: any | any[]): void {
+    this.options.forEach((option) => option.setInactiveStyles());
     this._selectionModel.clear();
 
     if (this.multiple && value) {
       if (!Array.isArray(value)) {
-        throw getSearchDropdownSelectNonArrayValueError();
+        throw getMatSelectNonArrayValueError();
       }
 
       value.forEach((currentValue: any) =>
         this._selectOptionByValue(currentValue)
       );
-      // this._sortValues();
+      this._sortValues();
     } else {
       const correspondingOption = this._selectOptionByValue(value);
 
@@ -908,8 +927,8 @@ export abstract class _SearchDropdownSelectBase<C>
    * Finds and selects and option based on its value.
    * @returns Option that has the corresponding value.
    */
-  private _selectOptionByValue(value: any): Option | undefined {
-    const correspondingOption = this._options.find((option: Option) => {
+  private _selectOptionByValue(value: any): MatOption | undefined {
+    const correspondingOption = this.options.find((option: MatOption) => {
       // Skip options that are already in the model. This allows us to handle cases
       // where the same primitive value is selected multiple times.
       if (this._selectionModel.isSelected(option)) {
@@ -938,7 +957,7 @@ export abstract class _SearchDropdownSelectBase<C>
       newValue !== this._value ||
       (this._multiple && Array.isArray(newValue))
     ) {
-      if (this._options) {
+      if (this.options) {
         this._setSelectionByValue(newValue);
       }
 
@@ -948,15 +967,20 @@ export abstract class _SearchDropdownSelectBase<C>
     return false;
   }
 
+  protected _skipPredicate(item: MatOption): boolean {
+    return item.disabled;
+  }
+
   /** Sets up a key manager to listen to keyboard events on the overlay panel. */
   private _initKeyManager() {
-    this._keyManager = new ActiveDescendantKeyManager<Option>(this._options)
+    this._keyManager = new ActiveDescendantKeyManager<MatOption>(this.options)
       .withTypeAhead(this._typeaheadDebounceInterval)
       .withVerticalOrientation()
       .withHorizontalOrientation(this._isRtl() ? 'rtl' : 'ltr')
       .withHomeAndEnd()
       .withPageUpDown()
-      .withAllowedModifierKeys(['shiftKey']);
+      .withAllowedModifierKeys(['shiftKey'])
+      .skipPredicate(this._skipPredicate);
 
     this._keyManager.tabOut.subscribe(() => {
       if (this.panelOpen) {
@@ -987,35 +1011,35 @@ export abstract class _SearchDropdownSelectBase<C>
   }
 
   /** Drops current option subscriptions and IDs and resets from scratch. */
-  // private _resetOptions(): void {
-  //   const changedOrDestroyed = merge(this.options.changes, this._destroy);
+  private _resetOptions(): void {
+    const changedOrDestroyed = merge(this.options.changes, this._destroy);
 
-  //   // this.optionSelectionChanges
-  //   //   .pipe(takeUntil(changedOrDestroyed))
-  //   //   .subscribe((event) => {
-  //   //     this._onSelect(event.source, event.isUserInput);
+    this.optionSelectionChanges
+      .pipe(takeUntil(changedOrDestroyed))
+      .subscribe((event) => {
+        this._onSelect(event.source, event.isUserInput);
 
-  //   //     if (event.isUserInput && !this.multiple && this._panelOpen) {
-  //   //       this.close();
-  //   //       this.focus();
-  //   //     }
-  //   //   });
+        if (event.isUserInput && !this.multiple && this._panelOpen) {
+          this.close();
+          this.focus();
+        }
+      });
 
-  //   // Listen to changes in the internal state of the options and react accordingly.
-  //   // Handles cases like the labels of the selected options changing.
-  //   merge(...this.options.map((option) => option._stateChanges))
-  //     .pipe(takeUntil(changedOrDestroyed))
-  //     .subscribe(() => {
-  //       // `_stateChanges` can fire as a result of a change in the label's DOM value which may
-  //       // be the result of an expression changing. We have to use `detectChanges` in order
-  //       // to avoid "changed after checked" errors (see #14793).
-  //       this._changeDetectorRef.detectChanges();
-  //       this.stateChanges.next();
-  //     });
-  // }
+    // Listen to changes in the internal state of the options and react accordingly.
+    // Handles cases like the labels of the selected options changing.
+    merge(...this.options.map((option) => option._stateChanges))
+      .pipe(takeUntil(changedOrDestroyed))
+      .subscribe(() => {
+        // `_stateChanges` can fire as a result of a change in the label's DOM value which may
+        // be the result of an expression changing. We have to use `detectChanges` in order
+        // to avoid "changed after checked" errors (see #14793).
+        this._changeDetectorRef.detectChanges();
+        this.stateChanges.next();
+      });
+  }
 
   /** Invoked when an option is clicked. */
-  private _onSelect(option: Option, isUserInput: boolean): void {
+  private _onSelect(option: MatOption, isUserInput: boolean): void {
     const wasSelected = this._selectionModel.isSelected(option);
 
     if (option.value == null && !this._multiple) {
@@ -1037,7 +1061,7 @@ export abstract class _SearchDropdownSelectBase<C>
       }
 
       if (this.multiple) {
-        // this._sortValues();
+        this._sortValues();
 
         if (isUserInput) {
           // In case the user selected the option with their mouse, we
@@ -1057,28 +1081,30 @@ export abstract class _SearchDropdownSelectBase<C>
   }
 
   /** Sorts the selected values in the selected based on their order in the panel. */
-  // private _sortValues() {
-  //   if (this.multiple) {
-  //     const options = this.options.toArray();
+  private _sortValues() {
+    if (this.multiple) {
+      const options = this.options.toArray();
 
-  //     this._selectionModel.sort((a, b) => {
-  //       return this.sortComparator
-  //         ? this.sortComparator(a, b, options)
-  //         : options.indexOf(a) - options.indexOf(b);
-  //     });
-  //     this.stateChanges.next();
-  //   }
-  // }
+      this._selectionModel.sort((a, b) => {
+        return this.sortComparator
+          ? this.sortComparator(a, b, options)
+          : options.indexOf(a) - options.indexOf(b);
+      });
+      this.stateChanges.next();
+    }
+  }
 
   /** Emits change event to set the model value. */
   private _propagateChanges(fallbackValue?: any): void {
     let valueToEmit: any = null;
 
     if (this.multiple) {
-      valueToEmit = (this.selected as Option[]).map((option) => option.value);
+      valueToEmit = (this.selected as MatOption[]).map(
+        (option) => option.value
+      );
     } else {
       valueToEmit = this.selected
-        ? (this.selected as Option).value
+        ? (this.selected as MatOption).value
         : fallbackValue;
     }
 
@@ -1091,12 +1117,24 @@ export abstract class _SearchDropdownSelectBase<C>
 
   /**
    * Highlights the selected item. If no option is selected, it will highlight
-   * the first item instead.
+   * the first *enabled* option.
    */
   private _highlightCorrectOption(): void {
     if (this._keyManager) {
       if (this.empty) {
-        this._keyManager.setFirstItemActive();
+        // Find the index of the first *enabled* option. Avoid calling `_keyManager.setActiveItem`
+        // because it activates the first option that passes the skip predicate, rather than the
+        // first *enabled* option.
+        let firstEnabledOptionIndex = -1;
+        for (let index = 0; index < this.options.length; index++) {
+          const option = this.options.get(index)!;
+          if (!option.disabled) {
+            firstEnabledOptionIndex = index;
+            break;
+          }
+        }
+
+        this._keyManager.setActiveItem(firstEnabledOptionIndex);
       } else {
         this._keyManager.setActiveItem(this._selectionModel.selected[0]);
       }
@@ -1105,7 +1143,7 @@ export abstract class _SearchDropdownSelectBase<C>
 
   /** Whether the panel is allowed to open. */
   protected _canOpen(): boolean {
-    return !this._panelOpen && !this.disabled && this._options?.length > 0;
+    return !this._panelOpen && !this.disabled && this.options?.length > 0;
   }
 
   /** Focuses the select element. */
@@ -1158,6 +1196,7 @@ export abstract class _SearchDropdownSelectBase<C>
 
   /**
    * Implemented as part of MatFormFieldControl.
+   * @docs-private
    */
   setDescribedByIds(ids: string[]) {
     if (ids.length) {
@@ -1172,6 +1211,7 @@ export abstract class _SearchDropdownSelectBase<C>
 
   /**
    * Implemented as part of MatFormFieldControl.
+   * @docs-private
    */
   onContainerClick() {
     this.focus();
@@ -1180,6 +1220,7 @@ export abstract class _SearchDropdownSelectBase<C>
 
   /**
    * Implemented as part of MatFormFieldControl.
+   * @docs-private
    */
   get shouldLabelFloat(): boolean {
     return (
@@ -1192,21 +1233,16 @@ export abstract class _SearchDropdownSelectBase<C>
  * Allows the user to customize the trigger that is displayed when the select has a value.
  */
 @Directive({
-  selector: 'search-dropdown-select-trigger',
-  providers: [
-    {
-      provide: SEARCH_DROPDOWN_SELECT_TRIGGER,
-      useExisting: SearchDropdownSelectTrigger,
-    },
-  ],
+  selector: 'mat-select-trigger',
+  providers: [{ provide: MAT_SELECT_TRIGGER, useExisting: MatSelectTrigger }],
 })
-export class SearchDropdownSelectTrigger {}
+export class MatSelectTrigger {}
 
 @Component({
-  selector: 'search-dropdown-select',
-  exportAs: 'searchDropdownSelect',
-  templateUrl: 'search-dropdown-select.html',
-  styleUrls: ['search-dropdown-select.scss'],
+  selector: 'mat-select',
+  exportAs: 'matSelect',
+  templateUrl: 'select.html',
+  styleUrls: ['select.scss'],
   inputs: ['disabled', 'disableRipple', 'tabIndex'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -1224,6 +1260,7 @@ export class SearchDropdownSelectTrigger {}
     '[attr.aria-disabled]': 'disabled.toString()',
     '[attr.aria-invalid]': 'errorState',
     '[attr.aria-activedescendant]': '_getAriaActiveDescendant()',
+    ngSkipHydration: '',
     '[class.mat-mdc-select-disabled]': 'disabled',
     '[class.mat-mdc-select-invalid]': 'errorState',
     '[class.mat-mdc-select-required]': 'required',
@@ -1233,41 +1270,31 @@ export class SearchDropdownSelectTrigger {}
     '(focus)': '_onFocus()',
     '(blur)': '_onBlur()',
   },
-  animations: [searchDropdownSelectAnimations.transformPanel],
+  animations: [matSelectAnimations.transformPanel],
   providers: [
-    { provide: MatFormFieldControl, useExisting: SearchDropdownSelect },
+    { provide: MatFormFieldControl, useExisting: MatSelect },
+    { provide: MAT_OPTION_PARENT_COMPONENT, useExisting: MatSelect },
   ],
 })
-export class SearchDropdownSelect
-  extends _SearchDropdownSelectBase<SearchDropdownSelectChange>
-  implements OnInit, AfterViewInit
+export class MatSelect
+  extends _MatSelectBase<MatSelectChange>
+  implements OnInit
 {
-  @ContentChildren(OptionComponent, { descendants: true })
-  optionComponents!: QueryList<OptionComponent>;
+  @ContentChildren(MatOption, { descendants: true })
+  options!: QueryList<MatOption>;
+  @ContentChildren(MAT_OPTGROUP, { descendants: true })
+  optionGroups!: QueryList<MatOptgroup>;
+  @ContentChild(MAT_SELECT_TRIGGER) customTrigger!: MatSelectTrigger;
 
-  @Input() set options(
-    opts: {
-      value: string;
-      label?: string;
-    }[]
-  ) {
-    this.localOptions = opts.map((opt) => new Option(opt.value, opt.label));
-  }
-
-  @Input() request?: (
-    searchValue?: string,
-    from?: number,
-    to?: number
-  ) => Observable<{ value: string; label?: string }[]>;
-
-  searchValue = '';
-
-  localOptions: Option[] = [];
-
-  asyncOptions: Option[] = [];
-
-  isLoading = false;
-  failed = false;
+  /**
+   * Width of the panel. If set to `auto`, the panel will match the trigger width.
+   * If set to null or an empty string, the panel will grow to match the longest option's text.
+   */
+  @Input() panelWidth: string | number | null =
+    this._defaultOptions &&
+    typeof this._defaultOptions.panelWidth !== 'undefined'
+      ? this._defaultOptions.panelWidth
+      : 'auto';
 
   _positions: ConnectedPosition[] = [
     {
@@ -1289,87 +1316,7 @@ export class SearchDropdownSelect
   _preferredOverlayOrigin: CdkOverlayOrigin | ElementRef | undefined;
 
   /** Width of the overlay panel. */
-  _overlayWidth!: number;
-
-  get noData() {
-    return this._options.length === 0;
-  }
-
-  get hasSelectAll() {
-    if (
-      this.multiple &&
-      this.hasLocalOptions &&
-      (!this.asyncOptions || this.asyncOptions.length === 0)
-    )
-      return true;
-
-    return false;
-  }
-
-  get hasLocalAndAsyncOptions() {
-    return this.hasLocalOptions && this.hasAsyncOptions;
-  }
-
-  get hasLocalOptions() {
-    return this.localOptions && this.localOptions.length > 0;
-  }
-
-  get hasAsyncOptions() {
-    return (
-      this.isLoading ||
-      this.failed ||
-      (this.asyncOptions && this.asyncOptions.length > 0)
-    );
-  }
-
-  get _options() {
-    const searchValue = this.searchValue;
-    let localDropdownOptions = this.localOptions;
-    if (this.searchValue) {
-      localDropdownOptions = this.localOptions.filter((option) =>
-        option.label.toLowerCase().includes(searchValue.toLowerCase())
-      );
-    }
-
-    if (
-      localDropdownOptions &&
-      localDropdownOptions.length > 0 &&
-      this.asyncOptions &&
-      this.asyncOptions.length > 0
-    ) {
-      return localDropdownOptions.concat(this.asyncOptions);
-    } else {
-      if (localDropdownOptions && localDropdownOptions.length > 0)
-        return localDropdownOptions;
-      if (this.asyncOptions && this.asyncOptions.length > 0)
-        return this.asyncOptions;
-    }
-
-    return [];
-  }
-
-  get localDropdownOptions() {
-    let localDropdownOptions = this.localOptions;
-    if (this.searchValue) {
-      localDropdownOptions = this.localOptions.filter((option) =>
-        option.label.toLowerCase().includes(this.searchValue.toLowerCase())
-      );
-    }
-
-    return localDropdownOptions;
-  }
-
-  get asyncDropdownOptions() {
-    let asyncDropdownOptions = this.asyncOptions;
-
-    if (this.searchValue) {
-      asyncDropdownOptions = this.asyncOptions.filter((option) =>
-        option.label.toLowerCase().includes(this.searchValue.toLowerCase())
-      );
-    }
-
-    return asyncDropdownOptions;
-  }
+  _overlayWidth!: string | number;
 
   override get shouldLabelFloat(): boolean {
     // Since the panel doesn't overlap the trigger, we
@@ -1386,67 +1333,26 @@ export class SearchDropdownSelect
       .pipe(takeUntil(this._destroy))
       .subscribe(() => {
         if (this.panelOpen) {
-          this._overlayWidth = this._getOverlayWidth();
+          this._overlayWidth = this._getOverlayWidth(
+            this._preferredOverlayOrigin
+          );
           this._changeDetectorRef.detectChanges();
         }
       });
-
-    if (!this.hasLocalOptions && !this.request)
-      throw getSearchDropdownSelectNoOptions();
   }
 
-  ngAfterViewInit() {
-    // Note that it's important that we read this in `ngAfterViewInit`, because
-    // reading it earlier will cause the form field to return a different element.
+  override open() {
+    // It's important that we read this as late as possible, because doing so earlier will
+    // return a different element since it's based on queries in the form field which may
+    // not have run yet. Also this needs to be assigned before we measure the overlay width.
     if (this._parentFormField) {
       this._preferredOverlayOrigin =
         this._parentFormField.getConnectedOverlayOrigin();
     }
-  }
 
-  searchValueChange() {
-    // console.log(this.searchValue);
-  }
-
-  onSelectAll(event: MatCheckboxChange) {
-    if (this.localOptions)
-      this.localOptions.forEach((option) => {
-        this.onCheck(event, option);
-      });
-
-    this.value = this._options.filter((option) => option.selected);
-  }
-
-  getAllSelected() {
-    if (!this.value || !Array.isArray(this.value)) return false;
-
-    console.log(this._options.length, this.value.length);
-
-    return this._options.length === this.value.length;
-  }
-
-  getSomeSelected() {
-    if (!this.value || !Array.isArray(this.value)) return false;
-
-    return this.value.length > 0 && this._options.length !== this.value.length;
-  }
-
-  private selectedOptions = new Set();
-
-  onCheck(event: MatCheckboxChange, option: Option) {
-    console.log(event);
-    if (event.checked) {
-      option.select();
-      this.selectedOptions.add(option.value);
-    } else {
-      option.deselect();
-      this.selectedOptions.delete(option.value);
-    }
-  }
-
-  override open() {
-    this._overlayWidth = this._getOverlayWidth();
+    this._overlayWidth = this._getOverlayWidth(this._preferredOverlayOrigin);
     super.open();
+
     // Required for the MDC form field to pick up when the overlay has been opened.
     this.stateChanges.next();
   }
@@ -1459,24 +1365,31 @@ export class SearchDropdownSelect
 
   /** Scrolls the active option into view. */
   protected _scrollOptionIntoView(index: number): void {
-    // const option = this.options.toArray()[index];
-    // if (option) {
-    //   const panel: HTMLElement = this.panel.nativeElement;
-    //   const element = option._getHostElement();
-    //   if (index === 0) {
-    //     // If we've got one group label before the option and we're at the top option,
-    //     // scroll the list to the top. This is better UX than scrolling the list to the
-    //     // top of the option, because it allows the user to read the top group's label.
-    //     panel.scrollTop = 0;
-    //   } else {
-    //     panel.scrollTop = _getOptionScrollPosition(
-    //       element.offsetTop,
-    //       element.offsetHeight,
-    //       panel.scrollTop,
-    //       panel.offsetHeight
-    //     );
-    //   }
-    // }
+    const option = this.options.toArray()[index];
+
+    if (option) {
+      const panel: HTMLElement = this.panel.nativeElement;
+      const labelCount = _countGroupLabelsBeforeOption(
+        index,
+        this.options,
+        this.optionGroups
+      );
+      const element = option._getHostElement();
+
+      if (index === 0 && labelCount === 1) {
+        // If we've got one group label before the option and we're at the top option,
+        // scroll the list to the top. This is better UX than scrolling the list to the
+        // top of the option, because it allows the user to read the top group's label.
+        panel.scrollTop = 0;
+      } else {
+        panel.scrollTop = _getOptionScrollPosition(
+          element.offsetTop,
+          element.offsetHeight,
+          panel.scrollTop,
+          panel.offsetHeight
+        );
+      }
+    }
   }
 
   protected _positioningSettled() {
@@ -1484,36 +1397,68 @@ export class SearchDropdownSelect
   }
 
   protected _getChangeEvent(value: any) {
-    return new SearchDropdownSelectChange(this, value);
+    return new MatSelectChange(this, value);
   }
 
   /** Gets how wide the overlay panel should be. */
-  private _getOverlayWidth() {
-    const refToMeasure =
-      this._preferredOverlayOrigin instanceof CdkOverlayOrigin
-        ? this._preferredOverlayOrigin.elementRef
-        : this._preferredOverlayOrigin || this._elementRef;
-    return refToMeasure.nativeElement.getBoundingClientRect().width;
+  private _getOverlayWidth(
+    preferredOrigin: ElementRef<ElementRef> | CdkOverlayOrigin | undefined
+  ): string | number {
+    if (this.panelWidth === 'auto') {
+      const refToMeasure =
+        preferredOrigin instanceof CdkOverlayOrigin
+          ? preferredOrigin.elementRef
+          : preferredOrigin || this._elementRef;
+      return refToMeasure.nativeElement.getBoundingClientRect().width;
+    }
+
+    return this.panelWidth === null ? '' : this.panelWidth;
   }
 
   /** Whether checkmark indicator for single-selection options is hidden. */
-  // @Input()
+  @Input()
   get hideSingleSelectionIndicator(): boolean {
     return this._hideSingleSelectionIndicator;
   }
   set hideSingleSelectionIndicator(value: BooleanInput) {
     this._hideSingleSelectionIndicator = coerceBooleanProperty(value);
-    // this._syncParentProperties();
+    this._syncParentProperties();
   }
   private _hideSingleSelectionIndicator: boolean =
-    this._defaultOptions?.hideSingleSelectionIndicator ?? true;
+    this._defaultOptions?.hideSingleSelectionIndicator ?? false;
 
-  // /** Syncs the parent state with the individual options. */
-  // _syncParentProperties(): void {
-  //   if (this.options) {
-  //     for (const option of this.options) {
-  //       option._changeDetectorRef.markForCheck();
-  //     }
-  //   }
-  // }
+  /** Syncs the parent state with the individual options. */
+  _syncParentProperties(): void {
+    if (this.options) {
+      for (const option of this.options) {
+        option._changeDetectorRef.markForCheck();
+      }
+    }
+  }
+
+  // `skipPredicate` determines if key manager should avoid putting a given option in the tab
+  // order. Allow disabled list items to receive focus via keyboard to align with WAI ARIA
+  // recommendation.
+  //
+  // Normally WAI ARIA's instructions are to exclude disabled items from the tab order, but it
+  // makes a few exceptions for compound widgets.
+  //
+  // From [Developing a Keyboard Interface](
+  // https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/):
+  //   "For the following composite widget elements, keep them focusable when disabled: Options in a
+  //   Listbox..."
+  //
+  // The user can focus disabled options using the keyboard, but the user cannot click disabled
+  // options.
+  protected override _skipPredicate = (option: MatOption) => {
+    if (this.panelOpen) {
+      // Support keyboard focusing disabled options in an ARIA listbox.
+      return false;
+    }
+
+    // When the panel is closed, skip over disabled options. Support options via the UP/DOWN arrow
+    // keys on a closed select. ARIA listbox interaction pattern is less relevant when the panel is
+    // closed.
+    return option.disabled;
+  };
 }

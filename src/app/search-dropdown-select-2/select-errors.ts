@@ -1,8 +1,12 @@
+// Note that these have been copied over verbatim from
+// `material/select` so that we don't have to expose them publicly.
+
 /**
  * Returns an exception to be thrown when attempting to change a select's `multiple` option
  * after initialization.
+ * @docs-private
  */
-export function getSearchDropdownSelectDynamicMultipleError(): Error {
+export function getMatSelectDynamicMultipleError(): Error {
   return Error('Cannot change `multiple` mode of select after initialization.');
 }
 
@@ -10,8 +14,9 @@ export function getSearchDropdownSelectDynamicMultipleError(): Error {
  * Returns an exception to be thrown when attempting to assign a non-array value to a select
  * in `multiple` mode. Note that `undefined` and `null` are still valid values to allow for
  * resetting the value.
+ * @docs-private
  */
-export function getSearchDropdownSelectNonArrayValueError(): Error {
+export function getMatSelectNonArrayValueError(): Error {
   return Error('Value must be an array in multiple-selection mode.');
 }
 
@@ -20,13 +25,6 @@ export function getSearchDropdownSelectNonArrayValueError(): Error {
  * used to determine if a value corresponds to an option. Note that whether the function
  * actually takes two values and returns a boolean is not checked.
  */
-export function getSearchDropdownSelectNonFunctionValueError(): Error {
+export function getMatSelectNonFunctionValueError(): Error {
   return Error('`compareWith` must be a function.');
-}
-
-/**
- * Returns an exception to be thrown when options or request is not set
- */
-export function getSearchDropdownSelectNoOptions(): Error {
-  return Error('options or request must be set.');
 }

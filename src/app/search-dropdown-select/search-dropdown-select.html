@@ -91,10 +91,10 @@
     </div>
     <ng-container *ngIf="hasSelectAll">
       <mat-checkbox
-        (change)="onSelectAll($event)"
+        color="primary"
         [checked]="getAllSelected()"
         [indeterminate]="!getAllSelected() && getSomeSelected()"
-        color="primary"
+        (change)="onSelectAll($event)"
       >
         Select all
       </mat-checkbox>
@@ -102,33 +102,43 @@
         <mat-divider></mat-divider>
       </div>
     </ng-container>
-    <mat-option *ngIf="!isLoading && noData" [disabled]="true">
+    <mat-option-mod *ngIf="!isLoading && noData" [disabled]="true">
       <div>No options</div>
-    </mat-option>
-    <span *ngIf="hasLocalAndAsyncOptions">Local</span>
-    <mat-option
-      *ngFor="let option of localDropdownOptions"
-      [value]="option.value"
-      >{{ option.label }}</mat-option
-    >
-    <span *ngIf="hasLocalAndAsyncOptions">Async</span>
-    <mat-option
-      *ngFor="let option of asyncDropdownOptions"
-      [value]="option.value"
-      >{{ option.label }}</mat-option
-    >
-    <mat-option
-      *ngIf="isLoading && !asyncDropdownOptions.length"
-      [disabled]="true"
-    >
-      <mat-spinner
-        *ngIf="isLoading"
-        class="m-auto"
-        [diameter]="20"
-      ></mat-spinner>
-    </mat-option>
-    <mat-option *ngIf="!isLoading && failed" [disabled]="true">
-      <div>Failed loading</div>
-    </mat-option>
+    </mat-option-mod>
+    <ng-container *ngIf="hasLocalOptions">
+      <span *ngIf="hasLocalAndAsyncOptions">Local</span>
+      <!-- <mat-option-mod #option>test</mat-option-mod> -->
+      <!-- {{log($any(option))}} -->
+      <mat-option-mod
+        *ngFor="let option of localDropdownOptions"
+        [option]="option"
+        [multiple]="multiple"
+      >
+        {{ option.label }} {{ option.selected }}
+      </mat-option-mod>
+    </ng-container>
+    <ng-container *ngIf="hasAsyncOptions">
+      <span *ngIf="hasLocalAndAsyncOptions">Async</span>
+      <mat-option-mod
+        *ngFor="let option of asyncDropdownOptions"
+        [option]="option"
+        [multiple]="multiple"
+      >
+        {{ option.label }}
+      </mat-option-mod>
+      <mat-option-mod
+        *ngIf="isLoading && !asyncDropdownOptions.length"
+        [disabled]="true"
+      >
+        <mat-spinner
+          *ngIf="isLoading"
+          class="m-auto"
+          [diameter]="20"
+        ></mat-spinner>
+      </mat-option-mod>
+      <mat-option-mod *ngIf="!isLoading && failed" [disabled]="true">
+        <div>Failed loading</div>
+      </mat-option-mod>
+    </ng-container>
   </div>
 </ng-template>

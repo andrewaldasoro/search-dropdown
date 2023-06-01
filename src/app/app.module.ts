@@ -2,10 +2,9 @@ import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MaterialModule } from '../material.module';
 
 import { AppComponent } from './app.component';
-import { SearchDropdownSelectModule } from './search-dropdown-select/module';
+import { MatSelectModule } from './search-dropdown-select-2/select.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -14,8 +13,9 @@ import { SearchDropdownSelectModule } from './search-dropdown-select/module';
     BrowserAnimationsModule,
     FormsModule,
     ReactiveFormsModule,
-    MaterialModule,
-    SearchDropdownSelectModule,
+    // MaterialModule,
+    // SearchDropdownSelectModule,
+    MatSelectModule,
   ],
   bootstrap: [AppComponent],
 })
