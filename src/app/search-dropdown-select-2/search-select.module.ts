@@ -35,4 +35,4 @@ import { MatCustomSelectModule } from './select.module';
   ],
   declarations: [SearchSelect],
 })
-export class MatSearchSelectModule {}
+export class SearchSelectModule {}
