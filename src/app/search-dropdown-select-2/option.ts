@@ -22,7 +22,7 @@ import { Subject } from 'rxjs';
 import { _MatOptgroupBase, MAT_OPTGROUP, MatOptgroup } from './optgroup';
 import {
   MAT_OPTION_PARENT_COMPONENT,
-  MatOptionParentComponent,
+  MatCustomOptionParentComponent,
 } from './option-parent';
 
 /**
@@ -31,18 +31,18 @@ import {
  */
 let _uniqueIdCounter = 0;
 
-/** Event object emitted by MatOption when selected or deselected. */
-export class MatOptionSelectionChange<T = any> {
+/** Event object emitted by MatCustomOption when selected or deselected. */
+export class MatCustomOptionSelectionChange<T = any> {
   constructor(
     /** Reference to the option that emitted the event. */
-    public source: _MatOptionBase<T>,
+    public source: _MatCustomOptionBase<T>,
     /** Whether the change in the option's value was a result of a user action. */
     public isUserInput = false
   ) {}
 }
 
 @Directive()
-export class _MatOptionBase<T = any>
+export class _MatCustomOptionBase<T = any>
   implements FocusableOption, AfterViewChecked, OnDestroy
 {
   private _selected = false;
@@ -77,7 +77,7 @@ export class _MatOptionBase<T = any>
   @Input() value!: T;
 
   /** The unique ID of the option. */
-  @Input() id: string = `mat-option-${_uniqueIdCounter++}`;
+  @Input() id: string = `mat-custom-option-${_uniqueIdCounter++}`;
 
   /** Whether the option is disabled. */
   @Input()
@@ -101,7 +101,7 @@ export class _MatOptionBase<T = any>
   /** Event emitted when the option is selected or deselected. */
   // tslint:disable-next-line:no-output-on-prefix
   @Output() readonly onSelectionChange = new EventEmitter<
-    MatOptionSelectionChange<T>
+    MatCustomOptionSelectionChange<T>
   >();
 
   @Output() readonly selectedChange = new EventEmitter<boolean>();
@@ -117,7 +117,7 @@ export class _MatOptionBase<T = any>
   constructor(
     private _element: ElementRef<HTMLElement>,
     public _changeDetectorRef: ChangeDetectorRef,
-    private _parent: MatOptionParentComponent,
+    private _parent: MatCustomOptionParentComponent,
     readonly group: _MatOptgroupBase
   ) {}
 
@@ -161,7 +161,7 @@ export class _MatOptionBase<T = any>
   /** Sets focus onto this option. */
   focus(_origin?: FocusOrigin, options?: FocusOptions): void {
     // Note that we aren't using `_origin`, but we need to keep it because some internal consumers
-    // use `MatOption` in a `FocusKeyManager` and we need it to match `FocusableOption`.
+    // use `MatCustomOption` in a `FocusKeyManager` and we need it to match `FocusableOption`.
     const element = this._getHostElement();
 
     if (typeof element.focus === 'function') {
@@ -225,8 +225,8 @@ export class _MatOptionBase<T = any>
 
   /** Returns the correct tabindex for the option depending on disabled state. */
   // This method is only used by `MatLegacyOption`. Keeping it here to avoid breaking the types.
-  // That's because `MatLegacyOption` use `MatOption` type in a few places such as
-  // `MatOptionSelectionChange`. It is safe to delete this when `MatLegacyOption` is deleted.
+  // That's because `MatLegacyOption` use `MatCustomOption` type in a few places such as
+  // `MatCustomOptionSelectionChange`. It is safe to delete this when `MatLegacyOption` is deleted.
   _getTabIndex(): string {
     return this.disabled ? '-1' : '0';
   }
@@ -238,7 +238,7 @@ export class _MatOptionBase<T = any>
 
   ngAfterViewChecked() {
     // Since parent components could be using the option's label to display the selected values
-    // (e.g. `mat-select`) and they don't have a way of knowing if the option's label has changed
+    // (e.g. `mat-custom-select`) and they don't have a way of knowing if the option's label has changed
     // we have to check for changes in the DOM ourselves and dispatch an event. These checks are
     // relatively cheap, however we still limit them only to selected options in order to avoid
     // hitting the DOM too often.
@@ -262,7 +262,7 @@ export class _MatOptionBase<T = any>
   /** Emits the selection change event. */
   private _emitSelectionChangeEvent(isUserInput = false): void {
     this.onSelectionChange.emit(
-      new MatOptionSelectionChange<T>(this, isUserInput)
+      new MatCustomOptionSelectionChange<T>(this, isUserInput)
     );
 
     this.selectedChange.emit(this._selected);
@@ -270,11 +270,11 @@ export class _MatOptionBase<T = any>
 }
 
 /**
- * Single option inside of a `<mat-select>` element.
+ * Single option inside of a `<mat-custom-select>` element.
  */
 @Component({
-  selector: 'mat-option',
-  exportAs: 'matOption',
+  selector: 'mat-custom-option',
+  exportAs: 'matCustomOption',
   host: {
     role: 'option',
     '[class.mdc-list-item--selected]': 'selected',
@@ -302,13 +302,13 @@ export class _MatOptionBase<T = any>
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MatOption<T = any> extends _MatOptionBase<T> {
+export class MatCustomOption<T = any> extends _MatCustomOptionBase<T> {
   constructor(
     element: ElementRef<HTMLElement>,
     changeDetectorRef: ChangeDetectorRef,
     @Optional()
     @Inject(MAT_OPTION_PARENT_COMPONENT)
-    parent: MatOptionParentComponent,
+    parent: MatCustomOptionParentComponent,
     @Optional() @Inject(MAT_OPTGROUP) group: MatOptgroup
   ) {
     super(element, changeDetectorRef, parent, group);
@@ -324,7 +324,7 @@ export class MatOption<T = any> extends _MatOptionBase<T> {
  */
 export function _countGroupLabelsBeforeOption(
   optionIndex: number,
-  options: QueryList<MatOption>,
+  options: QueryList<MatCustomOption>,
   optionGroups: QueryList<MatOptgroup>
 ): number {
   if (optionGroups.length) {

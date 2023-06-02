@@ -6,8 +6,8 @@ import {
   MatRippleModule,
 } from '@angular/material/core';
 import { MatOptgroup } from './optgroup';
-import { MatOption } from './option';
-import { MatSelectAllOption } from './select-all';
+import { MatCustomOption } from './option';
+import { MatCustomSelectAllOption } from './select-all';
 
 @NgModule({
   imports: [
@@ -16,10 +16,10 @@ import { MatSelectAllOption } from './select-all';
     MatCommonModule,
     MatPseudoCheckboxModule,
   ],
-  exports: [MatOption, MatOptgroup, MatSelectAllOption],
-  declarations: [MatOption, MatOptgroup, MatSelectAllOption],
+  exports: [MatCustomOption, MatOptgroup, MatCustomSelectAllOption],
+  declarations: [MatCustomOption, MatOptgroup, MatCustomSelectAllOption],
 })
-export class MatOptionModule {}
+export class MatCustomOptionModule {}
 
 export * from './optgroup';
 export * from './option';

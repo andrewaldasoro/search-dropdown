@@ -1,7 +1,7 @@
 <mat-form-field>
   <mat-label>Favorite food</mat-label>
-  <mat-select [multiple]="multiple" [formControl]="control">
-    <mat-select-trigger *ngIf="multiple">
+  <mat-custom-select [multiple]="multiple" [formControl]="control">
+    <mat-custom-select-trigger *ngIf="multiple">
       <mat-chip-row
         *ngFor="let option of selectedOptions"
         [disableRipple]="true"
@@ -21,7 +21,7 @@
           </svg>
         </button>
       </mat-chip-row>
-    </mat-select-trigger>
+    </mat-custom-select-trigger>
     <div class="mat-mdc-text-field-wrapper mdc-text-field">
       <input matInput type="text" [(ngModel)]="searchValue" />
     </div>
@@ -29,24 +29,24 @@
       <mat-divider></mat-divider>
     </div>
     <ng-container *ngIf="multiple && !hideSelectAll">
-      <mat-select-all
+      <mat-custom-select-all
         [state]="optionSelectionState"
         (selectedChange)="onSelectAll($event)"
       >
-      </mat-select-all>
+      </mat-custom-select-all>
       <div class="w-full my-2">
         <mat-divider></mat-divider>
       </div>
     </ng-container>
-    <mat-option *ngIf="noData" [disabled]="true" [multiple]="false">
+    <mat-custom-option *ngIf="noData" [disabled]="true" [multiple]="false">
       <div>No options</div>
-    </mat-option>
-    <mat-option
+    </mat-custom-option>
+    <mat-custom-option
       *ngFor="let option of options"
       [value]="option.value"
       [(selected)]="option.selected"
     >
       {{ option.label }}
-    </mat-option>
-  </mat-select>
+    </mat-custom-option>
+  </mat-custom-select>
 </mat-form-field>

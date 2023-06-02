@@ -11,13 +11,13 @@ import {
 import { CanDisable, mixinDisabled } from '@angular/material/core';
 import {
   MAT_OPTION_PARENT_COMPONENT,
-  MatOptionParentComponent,
+  MatCustomOptionParentComponent,
 } from './option-parent';
 
-// Notes on the accessibility pattern used for `mat-optgroup`.
+// Notes on the accessibility pattern used for `mat-custom-optgroup`.
 // The option group has two different "modes": regular and inert. The regular mode uses the
 // recommended a11y pattern which has `role="group"` on the group element with `aria-labelledby`
-// pointing to the label. This works for `mat-select`, but it seems to hit a bug for autocomplete
+// pointing to the label. This works for `mat-custom-select`, but it seems to hit a bug for autocomplete
 // under VoiceOver where the group doesn't get read out at all. The bug appears to be that if
 // there's __any__ a11y-related attribute on the group (e.g. `role` or `aria-labelledby`),
 // VoiceOver on Safari won't read it out.
@@ -29,9 +29,9 @@ import {
 // 1. Reading out the group label using the `LiveAnnouncer` solves the problem, but we can't control
 //    when the text will be read out so sometimes it comes in too late or never if the user
 //    navigates quickly.
-// 2. `<mat-option aria-describedby="groupLabel"` - This works on Safari, but VoiceOver in Chrome
+// 2. `<mat-custom-option aria-describedby="groupLabel"` - This works on Safari, but VoiceOver in Chrome
 //    won't read out the description at all.
-// 3. `<mat-option aria-labelledby="optionLabel groupLabel"` - This works on Chrome, but Safari
+// 3. `<mat-custom-option aria-labelledby="optionLabel groupLabel"` - This works on Chrome, but Safari
 //     doesn't read out the text at all. Furthermore, on
 
 // Boilerplate for applying mixins to MatOptgroup.
@@ -50,7 +50,7 @@ export class _MatOptgroupBase
   @Input() label!: string;
 
   /** Unique id for the underlying label. */
-  _labelId: string = `mat-optgroup-label-${_uniqueOptgroupIdCounter++}`;
+  _labelId: string = `mat-custom-optgroup-label-${_uniqueOptgroupIdCounter++}`;
 
   /** Whether the group is in inert a11y mode. */
   _inert: boolean;
@@ -58,7 +58,7 @@ export class _MatOptgroupBase
   constructor(
     @Inject(MAT_OPTION_PARENT_COMPONENT)
     @Optional()
-    parent?: MatOptionParentComponent
+    parent?: MatCustomOptionParentComponent
   ) {
     super();
     this._inert = parent?.inertGroups ?? false;
@@ -73,10 +73,10 @@ export class _MatOptgroupBase
 export const MAT_OPTGROUP = new InjectionToken<MatOptgroup>('MatOptgroup');
 
 /**
- * Component that is used to group instances of `mat-option`.
+ * Component that is used to group instances of `mat-custom-option`.
  */
 @Component({
-  selector: 'mat-optgroup',
+  selector: 'mat-custom-optgroup',
   exportAs: 'matOptgroup',
   templateUrl: 'optgroup.html',
   encapsulation: ViewEncapsulation.None,

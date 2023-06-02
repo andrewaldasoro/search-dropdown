@@ -5,7 +5,7 @@ import { InjectionToken } from '@angular/core';
  * Contains properties that the options can inherit.
  * @docs-private
  */
-export interface MatOptionParentComponent {
+export interface MatCustomOptionParentComponent {
   disableRipple?: boolean;
   multiple?: boolean;
   inertGroups?: boolean;
@@ -16,4 +16,6 @@ export interface MatOptionParentComponent {
  * Injection token used to provide the parent component to options.
  */
 export const MAT_OPTION_PARENT_COMPONENT =
-  new InjectionToken<MatOptionParentComponent>('MAT_OPTION_PARENT_COMPONENT');
+  new InjectionToken<MatCustomOptionParentComponent>(
+    'MAT_OPTION_PARENT_COMPONENT'
+  );

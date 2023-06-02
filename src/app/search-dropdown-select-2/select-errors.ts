@@ -6,7 +6,7 @@
  * after initialization.
  * @docs-private
  */
-export function getMatSelectDynamicMultipleError(): Error {
+export function getMatCustomSelectDynamicMultipleError(): Error {
   return Error('Cannot change `multiple` mode of select after initialization.');
 }
 
@@ -16,7 +16,7 @@ export function getMatSelectDynamicMultipleError(): Error {
  * resetting the value.
  * @docs-private
  */
-export function getMatSelectNonArrayValueError(): Error {
+export function getMatCustomSelectNonArrayValueError(): Error {
   return Error('Value must be an array in multiple-selection mode.');
 }
 
@@ -25,6 +25,6 @@ export function getMatSelectNonArrayValueError(): Error {
  * used to determine if a value corresponds to an option. Note that whether the function
  * actually takes two values and returns a boolean is not checked.
  */
-export function getMatSelectNonFunctionValueError(): Error {
+export function getMatCustomSelectNonFunctionValueError(): Error {
   return Error('`compareWith` must be a function.');
 }

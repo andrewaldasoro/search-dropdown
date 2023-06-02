@@ -19,7 +19,7 @@ import { MatPseudoCheckboxState } from '@angular/material/core';
 import { Subject } from 'rxjs';
 import {
   MAT_OPTION_PARENT_COMPONENT,
-  MatOptionParentComponent,
+  MatCustomOptionParentComponent,
 } from './option-parent';
 
 /**
@@ -29,7 +29,7 @@ import {
 let _uniqueIdCounter = 0;
 
 @Directive()
-export class _matSelectAllOptionBase<T = any>
+export class _MatCustomSelectAllOptionBase<T = any>
   implements FocusableOption, OnDestroy
 {
   private _selected = false;
@@ -74,7 +74,7 @@ export class _matSelectAllOptionBase<T = any>
   constructor(
     private _element: ElementRef<HTMLElement>,
     public _changeDetectorRef: ChangeDetectorRef,
-    private _parent: MatOptionParentComponent
+    private _parent: MatCustomOptionParentComponent
   ) {}
 
   /**
@@ -108,7 +108,7 @@ export class _matSelectAllOptionBase<T = any>
   /** Sets focus onto this option. */
   focus(_origin?: FocusOrigin, options?: FocusOptions): void {
     // Note that we aren't using `_origin`, but we need to keep it because some internal consumers
-    // use `MatOption` in a `FocusKeyManager` and we need it to match `FocusableOption`.
+    // use `MatCustomOption` in a `FocusKeyManager` and we need it to match `FocusableOption`.
     const element = this._getHostElement();
 
     if (typeof element.focus === 'function') {
@@ -167,8 +167,8 @@ export class _matSelectAllOptionBase<T = any>
 
   /** Returns the correct tabindex for the option depending on disabled state. */
   // This method is only used by `MatLegacyOption`. Keeping it here to avoid breaking the types.
-  // That's because `MatLegacyOption` use `MatOption` type in a few places such as
-  // `MatOptionSelectionChange`. It is safe to delete this when `MatLegacyOption` is deleted.
+  // That's because `MatLegacyOption` use `MatCustomOption` type in a few places such as
+  // `MatCustomOptionSelectionChange`. It is safe to delete this when `MatLegacyOption` is deleted.
   _getTabIndex(): string {
     return this.disabled ? '-1' : '0';
   }
@@ -189,10 +189,10 @@ export class _matSelectAllOptionBase<T = any>
 }
 
 /**
- * Single option inside of a `<mat-select>` element.
+ * Single option inside of a `<mat-custom-select>` element.
  */
 @Component({
-  selector: 'mat-select-all',
+  selector: 'mat-custom-select-all',
   exportAs: 'selectAll',
   host: {
     role: 'select-all',
@@ -221,7 +221,9 @@ export class _matSelectAllOptionBase<T = any>
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MatSelectAllOption<T = any> extends _matSelectAllOptionBase<T> {
+export class MatCustomSelectAllOption<
+  T = any
+> extends _MatCustomSelectAllOptionBase<T> {
   @Input() state: MatPseudoCheckboxState = 'unchecked';
 
   constructor(
@@ -229,7 +231,7 @@ export class MatSelectAllOption<T = any> extends _matSelectAllOptionBase<T> {
     changeDetectorRef: ChangeDetectorRef,
     @Optional()
     @Inject(MAT_OPTION_PARENT_COMPONENT)
-    parent: MatOptionParentComponent
+    parent: MatCustomOptionParentComponent
   ) {
     super(element, changeDetectorRef, parent);
   }

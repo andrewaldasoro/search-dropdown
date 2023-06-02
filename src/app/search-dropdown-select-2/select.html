@@ -19,7 +19,10 @@
       <span class="mat-mdc-select-min-line" *ngSwitchDefault
         >{{triggerValue}}</span
       >
-      <ng-content select="mat-select-trigger" *ngSwitchCase="true"></ng-content>
+      <ng-content
+        select="mat-custom-select-trigger"
+        *ngSwitchCase="true"
+      ></ng-content>
     </span>
   </div>
 

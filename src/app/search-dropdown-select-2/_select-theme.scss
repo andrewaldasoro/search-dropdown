@@ -1,14 +1,13 @@
-@use '@material/theme/theme-color' as mdc-theme-color;
-@use '@material/menu-surface' as mdc-menu-surface;
-@use '@material/list/evolution-mixins' as mdc-list;
-@use '@material/typography' as mdc-typography;
-@use '@material/density' as mdc-density;
-@use '@material/textfield' as mdc-textfield;
+@use "@material/theme/theme-color" as mdc-theme-color;
+@use "@material/menu-surface" as mdc-menu-surface;
+@use "@material/list/evolution-mixins" as mdc-list;
+@use "@material/typography" as mdc-typography;
+@use "@material/density" as mdc-density;
+@use "@material/textfield" as mdc-textfield;
 
-@use '../core/theming/theming';
-@use '../core/typography/typography';
-@use '../core/mdc-helpers/mdc-helpers';
-
+@use "../core/theming/theming";
+@use "../core/typography/typography";
+@use "../core/mdc-helpers/mdc-helpers";
 
 // Gets the color to use for some text that is highlighted while a select has focus.
 @function _get-mdc-focused-text-color($palette) {
@@ -67,16 +66,22 @@
 
 @mixin typography($config-or-theme) {
   $config: typography.private-typography-to-2018-config(
-      theming.get-typography-config($config-or-theme));
+    theming.get-typography-config($config-or-theme)
+  );
   @include mdc-helpers.using-mdc-typography($config) {
-    @include mdc-menu-surface.core-styles(mdc-helpers.$mdc-typography-styles-query);
+    @include mdc-menu-surface.core-styles(
+      mdc-helpers.$mdc-typography-styles-query
+    );
 
     .mat-mdc-select-panel {
       @include mdc-list.list-base(mdc-helpers.$mdc-typography-styles-query);
     }
 
     .mat-mdc-select {
-      @include mdc-typography.typography(body1, $query: mdc-helpers.$mdc-typography-styles-query);
+      @include mdc-typography.typography(
+        body1,
+        $query: mdc-helpers.$mdc-typography-styles-query
+      );
     }
   }
 }
@@ -102,7 +107,10 @@
 
 @mixin theme($theme-or-color-config) {
   $theme: theming.private-legacy-get-theme($theme-or-color-config);
-  @include theming.private-check-duplicate-theme-styles($theme, 'mat-select') {
+  @include theming.private-check-duplicate-theme-styles(
+    $theme,
+    "mat-custom-select"
+  ) {
     $color: theming.get-color-config($theme);
     $density: theming.get-density-config($theme);
     $typography: theming.get-typography-config($theme);

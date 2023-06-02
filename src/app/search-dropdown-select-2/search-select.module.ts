@@ -10,8 +10,8 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { BrowserModule } from '@angular/platform-browser';
-import { MatSearchSelect } from './search-select';
-import { MatSelectModule } from './select.module';
+import { SearchSelect } from './search-select';
+import { MatCustomSelectModule } from './select.module';
 
 @NgModule({
   imports: [
@@ -24,15 +24,15 @@ import { MatSelectModule } from './select.module';
     MatInputModule,
     MatPseudoCheckboxModule,
     MatRippleModule,
-    MatSelectModule,
+    MatCustomSelectModule,
     MatCommonModule,
   ],
   exports: [
     MatFormFieldModule,
-    MatSearchSelect,
-    MatSelectModule,
+    SearchSelect,
+    MatCustomSelectModule,
     MatCommonModule,
   ],
-  declarations: [MatSearchSelect],
+  declarations: [SearchSelect],
 })
 export class MatSearchSelectModule {}

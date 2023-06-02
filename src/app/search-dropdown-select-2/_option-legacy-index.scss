@@ -1,5 +1,5 @@
-@forward 'option-theme' hide color, theme, typography, density;
-@forward 'option-theme' as mat-option-* hide mat-option-density;
+@forward "option-theme" hide color, theme, typography, density;
+@forward "option-theme" as mat-custom-option-* hide mat-custom-option-density;
 
-@forward 'optgroup-theme' hide color, theme, typography, density;
-@forward 'optgroup-theme' as mat-optgroup-* hide mat-optgroup-density;
+@forward "optgroup-theme" hide color, theme, typography, density;
+@forward "optgroup-theme" as mat-custom-optgroup-* hide mat-custom-optgroup-density;

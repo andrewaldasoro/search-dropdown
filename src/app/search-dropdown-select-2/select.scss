@@ -11,11 +11,11 @@
 $swift-ease-out-duration: 400ms !default;
 $swift-ease-out-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1) !default;
 
-$mat-select-arrow-size: 5px !default;
-$mat-select-arrow-margin: 4px !default;
-$mat-select-panel-max-height: 275px !default;
-$mat-select-placeholder-arrow-space: 2 *
-  ($mat-select-arrow-size + $mat-select-arrow-margin);
+$mat-custom-select-arrow-size: 5px !default;
+$mat-custom-select-arrow-margin: 4px !default;
+$mat-custom-select-panel-max-height: 275px !default;
+$mat-custom-select-placeholder-arrow-space: 2 *
+  ($mat-custom-select-arrow-size + $mat-custom-select-arrow-margin);
 $leading-width: 12px !default;
 $scale: 0.75 !default;
 
@@ -74,8 +74,8 @@ $scale: 0.75 !default;
 }
 
 .mat-mdc-select-arrow {
-  width: $mat-select-arrow-size * 2;
-  height: $mat-select-arrow-size;
+  width: $mat-custom-select-arrow-size * 2;
+  height: $mat-custom-select-arrow-size;
   position: relative;
 
   svg {
@@ -101,7 +101,7 @@ $scale: 0.75 !default;
 // and avoid interference with `mat-menu` which uses the same mixins from MDC.
 .mdc-menu-surface.mat-mdc-select-panel {
   width: 100%; // Ensures that the panel matches the overlay width.
-  max-height: $mat-select-panel-max-height;
+  max-height: $mat-custom-select-panel-max-height;
   position: static; // MDC uses `absolute` by default which will throw off our positioning.
   outline: 0;
 
@@ -151,21 +151,25 @@ $scale: 0.75 !default;
 // Our MDC form field implementation is based on the MDC text field which doesn't include styles
 // for select. The select specific styles are not present as they don't use their text field as a
 // container. Below are the styles to account for the select arrow icon at the end.
-.mat-mdc-form-field-type-mat-select {
+.mat-mdc-form-field-type-mat-custom-select {
   &.mat-form-field-appearance-fill {
     .mat-mdc-floating-label {
-      max-width: calc(100% - #{$mat-select-placeholder-arrow-space});
+      max-width: calc(100% - #{$mat-custom-select-placeholder-arrow-space});
     }
 
     .mdc-floating-label--float-above {
-      $arrow-scale: math.div($mat-select-placeholder-arrow-space, $scale);
+      $arrow-scale: math.div(
+        $mat-custom-select-placeholder-arrow-space,
+        $scale
+      );
       max-width: calc(100% / #{$scale} - #{$arrow-scale});
     }
   }
   &.mat-form-field-appearance-outline {
     .mdc-notched-outline__notch {
       max-width: calc(
-        100% - #{2 * ($mat-select-placeholder-arrow-space + $leading-width)}
+        100% - #{2 *
+          ($mat-custom-select-placeholder-arrow-space + $leading-width)}
       );
     }
 

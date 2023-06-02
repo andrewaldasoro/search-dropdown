@@ -89,18 +89,18 @@ import {
 import {
   MAT_OPTGROUP,
   MAT_OPTION_PARENT_COMPONENT,
+  MatCustomOption,
+  MatCustomOptionSelectionChange,
   MatOptgroup,
-  MatOption,
-  MatOptionSelectionChange,
-  _MatOptionBase,
+  _MatCustomOptionBase,
   _countGroupLabelsBeforeOption,
   _getOptionScrollPosition,
 } from './option.module';
-import { matSelectAnimations } from './select-animations';
+import { matCustomSelectAnimations } from './select-animations';
 import {
-  getMatSelectDynamicMultipleError,
-  getMatSelectNonArrayValueError,
-  getMatSelectNonFunctionValueError,
+  getMatCustomSelectDynamicMultipleError,
+  getMatCustomSelectNonArrayValueError,
+  getMatCustomSelectNonFunctionValueError,
 } from './select-errors';
 
 let nextUniqueId = 0;
@@ -108,7 +108,7 @@ let nextUniqueId = 0;
 /** Injection token that determines the scroll handling while a select is open. */
 export const MAT_SELECT_SCROLL_STRATEGY = new InjectionToken<
   () => ScrollStrategy
->('mat-select-scroll-strategy');
+>('mat-custom-select-scroll-strategy');
 
 /** @docs-private */
 export function MAT_SELECT_SCROLL_STRATEGY_PROVIDER_FACTORY(
@@ -118,7 +118,7 @@ export function MAT_SELECT_SCROLL_STRATEGY_PROVIDER_FACTORY(
 }
 
 /** Object that can be used to configure the default options for the select module. */
-export interface MatSelectConfig {
+export interface MatCustomSelectConfig {
   /** Whether option centering should be disabled. */
   disableOptionCentering?: boolean;
 
@@ -139,7 +139,7 @@ export interface MatSelectConfig {
 }
 
 /** Injection token that can be used to provide the default options the select module. */
-export const MAT_SELECT_CONFIG = new InjectionToken<MatSelectConfig>(
+export const MAT_SELECT_CONFIG = new InjectionToken<MatCustomSelectConfig>(
   'MAT_SELECT_CONFIG'
 );
 
@@ -151,27 +151,27 @@ export const MAT_SELECT_SCROLL_STRATEGY_PROVIDER = {
 };
 
 /**
- * Injection token that can be used to reference instances of `MatSelectTrigger`. It serves as
- * alternative token to the actual `MatSelectTrigger` class which could cause unnecessary
+ * Injection token that can be used to reference instances of `MatCustomSelectTrigger`. It serves as
+ * alternative token to the actual `MatCustomSelectTrigger` class which could cause unnecessary
  * retention of the class and its directive metadata.
  */
-export const MAT_SELECT_TRIGGER = new InjectionToken<MatSelectTrigger>(
-  'MatSelectTrigger'
+export const MAT_SELECT_TRIGGER = new InjectionToken<MatCustomSelectTrigger>(
+  'MatCustomSelectTrigger'
 );
 
 /** Change event object that is emitted when the select value has changed. */
-export class MatSelectChange {
+export class MatCustomSelectChange {
   constructor(
     /** Reference to the select that emitted the change event. */
-    public source: MatSelect,
+    public source: MatCustomSelect,
     /** Current value of the select that emitted the event. */
     public value: any
   ) {}
 }
 
-// Boilerplate for applying mixins to MatSelect.
+// Boilerplate for applying mixins to MatCustomSelect.
 /** @docs-private */
-const _MatSelectMixinBase = mixinDisableRipple(
+const _MatCustomSelectMixinBase = mixinDisableRipple(
   mixinTabIndex(
     mixinDisabled(
       mixinErrorState(
@@ -201,10 +201,10 @@ const _MatSelectMixinBase = mixinDisableRipple(
   )
 );
 
-/** Base class with all of the `MatSelect` functionality. */
+/** Base class with all of the `MatCustomSelect` functionality. */
 @Directive()
-export abstract class _MatSelectBase<C>
-  extends _MatSelectMixinBase
+export abstract class _MatCustomSelectBase<C>
+  extends _MatCustomSelectMixinBase
   implements
     AfterContentInit,
     OnChanges,
@@ -219,7 +219,7 @@ export abstract class _MatSelectBase<C>
     CanDisableRipple
 {
   /** All of the defined select options. */
-  abstract options: QueryList<_MatOptionBase>;
+  abstract options: QueryList<_MatCustomOptionBase>;
 
   // TODO(crisbeto): this is only necessary for the non-MDC select, but it's technically a
   // public API so we have to keep it. It should be deprecated and removed eventually.
@@ -256,7 +256,7 @@ export abstract class _MatSelectBase<C>
   private _compareWith = (o1: any, o2: any) => o1 === o2;
 
   /** Unique id for this input. */
-  private _uid = `mat-select-${nextUniqueId++}`;
+  private _uid = `mat-custom-select-${nextUniqueId++}`;
 
   /** Current `aria-labelledby` value for the select trigger. */
   private _triggerAriaLabelledBy: string | null = null;
@@ -277,10 +277,10 @@ export abstract class _MatSelectBase<C>
   @Input('aria-describedby') userAriaDescribedBy!: string;
 
   /** Deals with the selection logic. */
-  _selectionModel!: SelectionModel<MatOption>;
+  _selectionModel!: SelectionModel<MatCustomOption>;
 
   /** Manages keyboard events for options in the panel. */
-  _keyManager!: ActiveDescendantKeyManager<MatOption>;
+  _keyManager!: ActiveDescendantKeyManager<MatCustomOption>;
 
   /** `View -> model callback called when value changes` */
   _onChange: (value: any) => void = () => {};
@@ -289,7 +289,7 @@ export abstract class _MatSelectBase<C>
   _onTouched = () => {};
 
   /** ID for the DOM node containing the select's value. */
-  _valueId = `mat-select-value-${nextUniqueId++}`;
+  _valueId = `mat-custom-select-value-${nextUniqueId++}`;
 
   /** Emits when the panel element is finished transforming in. */
   readonly _panelDoneAnimatingStream = new Subject<string>();
@@ -307,7 +307,7 @@ export abstract class _MatSelectBase<C>
   private _focused = false;
 
   /** A name for this control that can be used by `mat-form-field`. */
-  controlType = 'mat-select';
+  controlType = 'mat-custom-select';
 
   /** Trigger that opens the select. */
   @ViewChild('trigger') trigger!: ElementRef;
@@ -359,7 +359,7 @@ export abstract class _MatSelectBase<C>
   }
   set multiple(value: BooleanInput) {
     if (this._selectionModel) {
-      throw getMatSelectDynamicMultipleError();
+      throw getMatCustomSelectDynamicMultipleError();
     }
 
     this._multiple = coerceBooleanProperty(value);
@@ -388,7 +388,7 @@ export abstract class _MatSelectBase<C>
   }
   set compareWith(fn: (o1: any, o2: any) => boolean) {
     if (typeof fn !== 'function') {
-      throw getMatSelectNonFunctionValueError();
+      throw getMatCustomSelectNonFunctionValueError();
     }
     this._compareWith = fn;
     if (this._selectionModel) {
@@ -435,9 +435,9 @@ export abstract class _MatSelectBase<C>
    * Follows the same logic as `Array.prototype.sort`.
    */
   @Input() sortComparator?: (
-    a: MatOption,
-    b: MatOption,
-    options: MatOption[]
+    a: MatCustomOption,
+    b: MatCustomOption,
+    options: MatCustomOption[]
   ) => number;
 
   /** Unique id of the element. */
@@ -452,8 +452,8 @@ export abstract class _MatSelectBase<C>
   private _id!: string;
 
   /** Combined stream of all of the child options' change events. */
-  readonly optionSelectionChanges: Observable<MatOptionSelectionChange> = defer(
-    () => {
+  readonly optionSelectionChanges: Observable<MatCustomOptionSelectionChange> =
+    defer(() => {
       const options = this.options;
 
       if (options) {
@@ -469,8 +469,7 @@ export abstract class _MatSelectBase<C>
         take(1),
         switchMap(() => this.optionSelectionChanges)
       );
-    }
-  ) as Observable<MatOptionSelectionChange>;
+    }) as Observable<MatCustomOptionSelectionChange>;
 
   /** Event emitted when the select panel has been toggled. */
   @Output() readonly openedChange: EventEmitter<boolean> =
@@ -518,7 +517,7 @@ export abstract class _MatSelectBase<C>
     private _liveAnnouncer: LiveAnnouncer,
     @Optional()
     @Inject(MAT_SELECT_CONFIG)
-    protected _defaultOptions?: MatSelectConfig
+    protected _defaultOptions?: MatCustomSelectConfig
   ) {
     super(
       elementRef,
@@ -550,7 +549,7 @@ export abstract class _MatSelectBase<C>
   }
 
   ngOnInit() {
-    this._selectionModel = new SelectionModel<MatOption>(this.multiple);
+    this._selectionModel = new SelectionModel<MatCustomOption>(this.multiple);
     this.stateChanges.next();
 
     // We need `distinctUntilChanged` here, because some browsers will
@@ -708,7 +707,7 @@ export abstract class _MatSelectBase<C>
   }
 
   /** The currently selected option. */
-  get selected(): MatOption | MatOption[] {
+  get selected(): MatCustomOption | MatCustomOption[] {
     return this.multiple
       ? this._selectionModel?.selected || []
       : this._selectionModel?.selected[0];
@@ -778,7 +777,7 @@ export abstract class _MatSelectBase<C>
         // We set a duration on the live announcement, because we want the live element to be
         // cleared after a while so that users can't navigate to it using the arrow keys.
         this._liveAnnouncer.announce(
-          (selectedOption as MatOption).viewValue,
+          (selectedOption as MatCustomOption).viewValue,
           10000
         );
       }
@@ -899,7 +898,7 @@ export abstract class _MatSelectBase<C>
 
     if (this.multiple && value) {
       if (!Array.isArray(value)) {
-        throw getMatSelectNonArrayValueError();
+        throw getMatCustomSelectNonArrayValueError();
       }
 
       value.forEach((currentValue: any) =>
@@ -927,8 +926,8 @@ export abstract class _MatSelectBase<C>
    * Finds and selects and option based on its value.
    * @returns Option that has the corresponding value.
    */
-  private _selectOptionByValue(value: any): MatOption | undefined {
-    const correspondingOption = this.options.find((option: MatOption) => {
+  private _selectOptionByValue(value: any): MatCustomOption | undefined {
+    const correspondingOption = this.options.find((option: MatCustomOption) => {
       // Skip options that are already in the model. This allows us to handle cases
       // where the same primitive value is selected multiple times.
       if (this._selectionModel.isSelected(option)) {
@@ -967,13 +966,15 @@ export abstract class _MatSelectBase<C>
     return false;
   }
 
-  protected _skipPredicate(item: MatOption): boolean {
+  protected _skipPredicate(item: MatCustomOption): boolean {
     return item.disabled;
   }
 
   /** Sets up a key manager to listen to keyboard events on the overlay panel. */
   private _initKeyManager() {
-    this._keyManager = new ActiveDescendantKeyManager<MatOption>(this.options)
+    this._keyManager = new ActiveDescendantKeyManager<MatCustomOption>(
+      this.options
+    )
       .withTypeAhead(this._typeaheadDebounceInterval)
       .withVerticalOrientation()
       .withHorizontalOrientation(this._isRtl() ? 'rtl' : 'ltr')
@@ -1039,7 +1040,7 @@ export abstract class _MatSelectBase<C>
   }
 
   /** Invoked when an option is clicked. */
-  private _onSelect(option: MatOption, isUserInput: boolean): void {
+  private _onSelect(option: MatCustomOption, isUserInput: boolean): void {
     const wasSelected = this._selectionModel.isSelected(option);
 
     if (option.value == null && !this._multiple) {
@@ -1067,7 +1068,7 @@ export abstract class _MatSelectBase<C>
           // In case the user selected the option with their mouse, we
           // want to restore focus back to the trigger, in order to
           // prevent the select keyboard controls from clashing with
-          // the ones from `mat-option`.
+          // the ones from `mat-custom-option`.
           this.focus();
         }
       }
@@ -1099,12 +1100,12 @@ export abstract class _MatSelectBase<C>
     let valueToEmit: any = null;
 
     if (this.multiple) {
-      valueToEmit = (this.selected as MatOption[]).map(
+      valueToEmit = (this.selected as MatCustomOption[]).map(
         (option) => option.value
       );
     } else {
       valueToEmit = this.selected
-        ? (this.selected as MatOption).value
+        ? (this.selected as MatCustomOption).value
         : fallbackValue;
     }
 
@@ -1233,14 +1234,16 @@ export abstract class _MatSelectBase<C>
  * Allows the user to customize the trigger that is displayed when the select has a value.
  */
 @Directive({
-  selector: 'mat-select-trigger',
-  providers: [{ provide: MAT_SELECT_TRIGGER, useExisting: MatSelectTrigger }],
+  selector: 'mat-custom-select-trigger',
+  providers: [
+    { provide: MAT_SELECT_TRIGGER, useExisting: MatCustomSelectTrigger },
+  ],
 })
-export class MatSelectTrigger {}
+export class MatCustomSelectTrigger {}
 
 @Component({
-  selector: 'mat-select',
-  exportAs: 'matSelect',
+  selector: 'mat-custom-select',
+  exportAs: 'matCustomSelect',
   templateUrl: 'select.html',
   styleUrls: ['select.scss'],
   inputs: ['disabled', 'disableRipple', 'tabIndex'],
@@ -1270,21 +1273,21 @@ export class MatSelectTrigger {}
     '(focus)': '_onFocus()',
     '(blur)': '_onBlur()',
   },
-  animations: [matSelectAnimations.transformPanel],
+  animations: [matCustomSelectAnimations.transformPanel],
   providers: [
-    { provide: MatFormFieldControl, useExisting: MatSelect },
-    { provide: MAT_OPTION_PARENT_COMPONENT, useExisting: MatSelect },
+    { provide: MatFormFieldControl, useExisting: MatCustomSelect },
+    { provide: MAT_OPTION_PARENT_COMPONENT, useExisting: MatCustomSelect },
   ],
 })
-export class MatSelect
-  extends _MatSelectBase<MatSelectChange>
+export class MatCustomSelect
+  extends _MatCustomSelectBase<MatCustomSelectChange>
   implements OnInit
 {
-  @ContentChildren(MatOption, { descendants: true })
-  options!: QueryList<MatOption>;
+  @ContentChildren(MatCustomOption, { descendants: true })
+  options!: QueryList<MatCustomOption>;
   @ContentChildren(MAT_OPTGROUP, { descendants: true })
   optionGroups!: QueryList<MatOptgroup>;
-  @ContentChild(MAT_SELECT_TRIGGER) customTrigger!: MatSelectTrigger;
+  @ContentChild(MAT_SELECT_TRIGGER) customTrigger!: MatCustomSelectTrigger;
 
   /**
    * Width of the panel. If set to `auto`, the panel will match the trigger width.
@@ -1397,7 +1400,7 @@ export class MatSelect
   }
 
   protected _getChangeEvent(value: any) {
-    return new MatSelectChange(this, value);
+    return new MatCustomSelectChange(this, value);
   }
 
   /** Gets how wide the overlay panel should be. */
@@ -1450,7 +1453,7 @@ export class MatSelect
   //
   // The user can focus disabled options using the keyboard, but the user cannot click disabled
   // options.
-  protected override _skipPredicate = (option: MatOption) => {
+  protected override _skipPredicate = (option: MatCustomOption) => {
     if (this.panelOpen) {
       // Support keyboard focusing disabled options in an ARIA listbox.
       return false;

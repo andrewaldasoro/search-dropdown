@@ -10,13 +10,13 @@ export interface Option {
 }
 
 @Component({
-  selector: 'mat-search-select',
+  selector: 'search-select',
   templateUrl: 'search-select.html',
   host: {
     class: 'mat-mdc-search-select',
   },
 })
-export class MatSearchSelect {
+export class SearchSelect {
   @ViewChild('selectCheckbox', { static: false, read: ElementRef })
   selectCheckbox?: ElementRef<HTMLElement>;
 

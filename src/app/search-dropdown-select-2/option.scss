@@ -58,7 +58,7 @@ $mdc-base-styles-query: mdc-feature-targeting.without(
     // opacity only on the visual content rather than the entire list-item so we don't affect the
     // focus ring from `.mat-mdc-focus-indicator`.
     //
-    // MatOption uses a child `<div>` element for its focus state to align with how ListItem does
+    // MatCustomOption uses a child `<div>` element for its focus state to align with how ListItem does
     // its focus state.
     .mat-mdc-option-pseudo-checkbox,
     .mdc-list-item__primary-text,

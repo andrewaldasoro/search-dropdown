@@ -1,8 +1,8 @@
-@use '@material/theme/theme' as mdc-theme;
+@use "@material/theme/theme" as mdc-theme;
 
-@use '../theming/theming';
-@use '../typography/typography';
-@use '../mdc-helpers/mdc-helpers';
+@use "../theming/theming";
+@use "../typography/typography";
+@use "../mdc-helpers/mdc-helpers";
 
 @mixin color($config-or-theme) {
   $config: theming.get-color-config($config-or-theme);
@@ -18,7 +18,8 @@
 
 @mixin typography($config-or-theme) {
   $config: typography.private-typography-to-2018-config(
-      theming.get-typography-config($config-or-theme));
+    theming.get-typography-config($config-or-theme)
+  );
 }
 
 @mixin density($config-or-theme) {
@@ -27,7 +28,10 @@
 
 @mixin theme($theme-or-color-config) {
   $theme: theming.private-legacy-get-theme($theme-or-color-config);
-  @include theming.private-check-duplicate-theme-styles($theme, 'mat-optgroup') {
+  @include theming.private-check-duplicate-theme-styles(
+    $theme,
+    "mat-custom-optgroup"
+  ) {
     $color: theming.get-color-config($theme);
     $density: theming.get-density-config($theme);
     $typography: theming.get-typography-config($theme);
