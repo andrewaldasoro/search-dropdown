@@ -25,6 +25,8 @@ export class SearchSelect {
   _multiple = false;
   _hideSelectAll = false;
 
+  @Input() label?: string;
+
   @Input()
   get options() {
     return this._options.filter((option) =>
